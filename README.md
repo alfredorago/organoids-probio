@@ -12,3 +12,4 @@ The files libraries and function store the stuff that needs to be loaded in orde
 
 We store the results from fastqc, and summarize them using the fastqcr package.
 Note that fastqc analyses are *not* included in the drake workflow, only the summaries are.
+Before running those, use the fastqc.sh script to generate the fastqc reports
