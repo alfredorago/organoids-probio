@@ -11,6 +11,7 @@ library(tidyverse)
 library(ggplot2)
 library(drake)
 library(fastqcr)
+library(here)
 loadd(fastqc_dir)
 loadd(fastq_dir)
 loadd(fastqc_tibble)
@@ -29,14 +30,24 @@ Overall looking great, but all samples fail at k-mer content, per-base sequence 
 
 ```{r GC bias_1}
 # Select problematic sample, read its zip file and plot
+qc_module = "Per base sequence content"
+
 failed_samples = 
   fastqc_tibble %>%
-  filter(., module == "Sequence Duplication Levels" & status == "FAIL") %>%
+  filter(., module == qc_module & status == "FAIL") %>%
   pull(., 'sample') %>%
   str_replace(string = ., pattern = "fq.gz", replacement = "") %>%
-  paste0(fastqc_dir, .) %>% magrittr::extract(10) %>%
-  print(.) %T>%
-  qc_read(., verbose = T) 
+  paste0(fastqc_dir, .) 
 
-qc_plot(qc = failed_samples, modules = "Sequence Duplication Levels")
+# qc_read(failed_samples[1:10]) %>% qc_plot(., modules = qc_module)
+ifelse(dir.exists(paths = here("results/fastqcr", qc_module)), 
+       print("results directory already exists"), 
+       dir.create(here("results/fastqcr", qc_module))
+)
+
+for (i in 1:length(failed_samples)) {
+  qc_read(failed_samples[i]) %>%
+  qc_plot(., modules = qc_module)
+  ggsave(here("results/fastqcr",  qc_module, paste0('report', i, '.png')), device = 'png')
+}
 ```
