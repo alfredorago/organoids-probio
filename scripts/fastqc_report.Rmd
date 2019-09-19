@@ -1,0 +1,42 @@
+---
+title: "2019_mycoplasma_report"
+author: "Alfredo Rago"
+date: "9/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(drake)
+library(fastqcr)
+loadd(fastqc_dir)
+loadd(fastq_dir)
+loadd(fastqc_tibble)
+```
+
+## Initial report of fastq read quality
+
+```{r fastqc_overview}
+summary(fastqc_tibble)
+```
+
+Overall looking great, but all samples fail at k-mer content, per-base sequence content and duplication levels. All of those are expected in RNAseq.
+48 samples have overrepresented sequence warnings (normal for RNAseq) and 23 have warnings on per-sequence GC content.
+
+## Explore per-sequence GC content bias
+
+```{r GC bias_1}
+# Select problematic sample, read its zip file and plot
+failed_samples = 
+  fastqc_tibble %>%
+  filter(., module == "Sequence Duplication Levels" & status == "FAIL") %>%
+  pull(., 'sample') %>%
+  str_replace(string = ., pattern = "fq.gz", replacement = "") %>%
+  paste0(fastqc_dir, .) %>% magrittr::extract(10) %>%
+  print(.) %T>%
+  qc_read(., verbose = T) 
+
+qc_plot(qc = failed_samples, modules = "Sequence Duplication Levels")
+```
