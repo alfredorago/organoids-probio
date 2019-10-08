@@ -12,7 +12,7 @@ fastq_dir_in=./data/X201SC19060242-Z01-F001/raw_data/
 
 fastq_dir_out=./results/trim_reads/
 
-fastq_files=$(ls ${fastq_dir_in}A_37* | grep -oh "A_[0-9,_]*")
+fastq_files=$(ls ${fastq_dir_in}* | grep -oh "A_[0-9,_]*")
 
 echo $fastq_files
 
