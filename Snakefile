@@ -1,14 +1,8 @@
 ### Snakemake plan for the whole workflow
 
 # Define input path for fastq files
-import glob
-import os
-import re
-
-## Set input paths, then extract sample names via regexpr
 input_path_fq = "../data/X201SC19060242-Z01-F001/raw_data/"
-input_base_fq = [re.search("[A-Z,0-9,_]*(?=.fq)", f) for f in glob.glob(input_path_fq + "*.fq.gz")]
-input_base_fq = [f.group() for f in input_base_fq]
+input_base_fq = glob_wildcards("../data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -24,7 +18,6 @@ rule fastqc:
     expand('./results/fastqc/{base}_fastqc.html', base = input_base_fq),
     expand('./results/fastqc/{base}_fastqc.zip', base = input_base_fq)
   shell: 'nice --adjustment=+10 fastqc {input} -o=./results/fastqc/ -t=128'
-
 
 # Trim 20 bp from 5' end to remove primer adapter bias
 
