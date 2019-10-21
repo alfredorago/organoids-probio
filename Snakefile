@@ -21,7 +21,18 @@ rule fastqc:
   shell:
     "nice --adjustment=+10 fastqc {input.fq} -o={fq_outpath} -t=128"
 
+
 # Trim 20 bp from 5' end to remove primer adapter bias
+trim_outpath: "results/trim_reads"
+
+rule trim:
+  input:
+    fq = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq)
+  output:
+    expand("{path}{base}.fq.gz", base = input_base_fq, path = trim_outpath)
+  shell:
+    "nice --adjustment=+10 seqtk trimfq -b 20 {input.fq} > {output}"
+
 
 # Map to reference mycoplasma genome
 
