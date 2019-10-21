@@ -12,7 +12,7 @@ rule download_mycoplasma:
 
 # Test sequences with fastqc
 fq_outpath = "results/fastqc/"
-print(*expand("{path}{base}_fastqc.html", base = input_base_fq, path = fq_outpath))
+
 rule fastqc:
   input:
     fq = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq)
