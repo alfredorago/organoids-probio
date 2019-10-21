@@ -2,7 +2,7 @@
 
 # Define input path for fastq files
 input_path_fq = "../data/X201SC19060242-Z01-F001/raw_data/"
-input_base_fq = glob_wildcards("../data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
+input_base_fq, = glob_wildcards("../data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -11,13 +11,15 @@ rule download_mycoplasma:
 
 
 # Test sequences with fastqc
+fq_outpath = "results/fastqc/"
+print(*expand("{path}{base}_fastqc.html", base = input_base_fq, path = fq_outpath))
 rule fastqc:
   input:
-    expand("{path}{base}.fq.gz", path = input_path_fq, base = input_base_fq)
+    fq = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq)
   output:
-    expand('./results/fastqc/{base}_fastqc.html', base = input_base_fq),
-    expand('./results/fastqc/{base}_fastqc.zip', base = input_base_fq)
-  shell: 'nice --adjustment=+10 fastqc {input} -o=./results/fastqc/ -t=128'
+    expand("{path}{base}_fastqc.html", base = input_base_fq, path = fq_outpath)
+  shell:
+    "nice --adjustment=+10 fastqc {input.fq} -o={fq_outpath} -t=128"
 
 # Trim 20 bp from 5' end to remove primer adapter bias
 
