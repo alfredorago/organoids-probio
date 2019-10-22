@@ -26,8 +26,9 @@ rule fastqc:
     fq = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq)
   output:
     expand("results/fastqc/{base}_fastqc.html", base = input_base_fq)
+  log: "logs/fastqc"
   shell:
-    "nice --adjustment=+10 fastqc {input.fq} -o={fq_outpath} -t=128"
+    "nice --adjustment=+10 fastqc {input.fq} -o={fq_outpath} -t=128 2> {log}"
 
 # Trim 20 bp from 5' end to remove primer adapter bias
 rule trim_reads:
