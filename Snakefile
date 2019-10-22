@@ -14,9 +14,11 @@ rule all:
 # Download reference mycoplasma genome
 rule download_mycoplasma:
   output:
-    '../data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz'
+    'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz'
+  log:
+    "logs/download_mycoplasma.txt"
   shell:
-    'wget -r -np -k -N -nd -P ../data/mycoplasma/ ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/003/663/725/GCF_003663725.1_ASM366372v1/'
+    'wget -r -np -k -N -nd -P ../data/mycoplasma/ ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/003/663/725/GCF_003663725.1_ASM366372v1/ 2> {log}'
 
 # Test sequences with fastqc
 rule fastqc:
