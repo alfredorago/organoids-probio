@@ -4,6 +4,11 @@
 input_path_fq = "../data/X201SC19060242-Z01-F001/raw_data/"
 input_base_fq, = glob_wildcards("../data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
 
+# rule all to generate all output files at once
+rule all:
+  input:
+    '../data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz'
+
 # Download reference mycoplasma genome
 rule download_mycoplasma:
   output:  '../data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz'
