@@ -7,7 +7,9 @@ input_base_fq, = glob_wildcards("../data/X201SC19060242-Z01-F001/raw_data/{base}
 # rule all to generate all output files at once
 rule all:
   input:
-    '../data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz'
+    mycoplasma_transcriptome = 'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz',
+    fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
+    trimmed_fastq = expand("results/trim_reads/{base}.fq.gz", base = input_base_fq)
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
