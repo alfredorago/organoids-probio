@@ -9,7 +9,7 @@ rule all:
   input:
     mycoplasma_transcriptome = 'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz',
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
-    trimmed_fastq = expand("results/trim_reads/{base}.fq.gz", base = input_base_fq)
+    trimmed_fastq = expand("results/trim_reads/{base}.fq", base = input_base_fq)
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -30,13 +30,17 @@ rule fastqc:
     "nice --adjustment=+10 fastqc {input.fq} -o={fq_outpath} -t=128"
 
 # Trim 20 bp from 5' end to remove primer adapter bias
-rule trim_20bp:
+rule trim_reads:
   input:
     fq = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq)
   output:
-    expand("results/trim_reads/{base}.fq.gz", base = input_base_fq)
+    expand("results/trim_reads/{base}.fq", base = input_base_fq)
+  log:
+    "logs/trim_reads.txt"
   shell:
-    "nice --adjustment=+10 seqtk trimfq -b 20 {input.fq} > {output}"
+    "nice --adjustment=+10 seqtk trimfq -b 20 {input.fq} > {output} 2> {log}"
+
+# Index Mycoplasma transcriptome
 
 # Map to reference mycoplasma genome
 
