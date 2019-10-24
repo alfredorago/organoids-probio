@@ -3,6 +3,11 @@
 # Define input path for fastq files
 input_path_fq = "data/X201SC19060242-Z01-F001/raw_data/"
 input_base_fq, = glob_wildcards("data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
+# Define standard bowtie2 reference suffixes
+bowtie_suffixes = (
+  *[".{id}.bt2".format(id = i) for i in range(1,5)],
+  *[".rev.{id}.bt2".format(id = i) for i in range(1,3)]
+)
 
 # rule all to generate all output files at once
 rule all:
@@ -10,8 +15,9 @@ rule all:
     mycoplasma_transcriptome = 'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz',
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     trimmed_fastq = expand("results/trim_reads/{base}.fq", base = input_base_fq),
-    human_reference_bowtie2 = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38.{seq}.bt2", seq = range(1,3)),
-    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference.{id}.bt2", id = range(1,4)),
+    human_reference_bowtie2 = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38{suffix}", suffix = bowtie_suffixes),
+    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
+    fastq_txt = expand("results/fastq_report/{basename}.txt", basename = input_base_fq),
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -53,7 +59,7 @@ rule trim_reads:
 # Download reference genomes for human and mouse
 rule reference_index:
   output:
-    expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38.{seq}.bt2", seq = range(1,3))
+    expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38{suffix}", suffix = bowtie_suffixes)
   shell:
     "fastq_screen --get_genomes --outdir data/fastq_screen_references"
 
@@ -63,7 +69,7 @@ rule mycoplasma_reference:
     'data/mycoplasma/GCF_003663725.1_ASM366372v1_genomic.fna.gz'
   output:
     mycoplasma_genome = temp("results/mycoplasma_reference/mycoplasma_genome.fa"),
-    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference.{id}.bt2", id = range(1,4)),
+    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
   shell:
     '''
     gzip -cd {input} > {output.mycoplasma_genome}  &&
