@@ -17,7 +17,7 @@ rule all:
     trimmed_fastq = expand("results/trim_reads/{base}.fq", base = input_base_fq),
     human_reference_bowtie2 = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38{suffix}", suffix = bowtie_suffixes),
     mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
-    fastq_txt = expand("results/fastq_report/{basename}.txt", basename = input_base_fq),
+    fastq_txt = expand("results/fastq_screen/{basename}.txt", basename = input_base_fq),
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -36,7 +36,7 @@ rule fastqc:
     expand("results/fastqc/{base}_fastqc.html", base = input_base_fq)
   log:
     "logs/fastqc"
-  threads: 128
+  threads: 6
   shell:
     "nice --adjustment=+10 fastqc {input.fq} -threads {threads} -o=results/fastqc/ 2> {log}"
 
@@ -84,13 +84,13 @@ rule fastq_screen:
     fastq = expand("results/trim_reads/{basename}.fq", basename = input_base_fq),
     mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
   output:
-    fastq_txt = expand("results/fastq_report/{basename}.txt", basename = input_base_fq),
-    fastq_png = expand("results/fastq_report/{basename}.png", basename = input_base_fq),
+    fastq_txt = expand("results/fastq_screen/{basename}.txt", basename = input_base_fq),
+    fastq_html = expand("results/fastq_screen/{basename}.html", basename = input_base_fq),
   threads: 16
   shell:
     '''
+    nice --adjustment=+10 \
     fastq_screen \
-        --subset 100 --outdir results/fastq_screen --conf scripts/fastq_screen.conf --threads {threads} {input.fastq}
+        --subset 0 --outdir results/fastq_screen --conf scripts/fastq_screen.conf --threads {threads} {input.fastq}
     '''
 
-# Quantify mycoplasma expression
