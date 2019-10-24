@@ -10,7 +10,8 @@ rule all:
     mycoplasma_transcriptome = 'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz',
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     trimmed_fastq = expand("results/trim_reads/{base}.fq", base = input_base_fq),
-    human_reference_bowtie2 = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38.{seq}.bt2", seq = range(1,3))
+    human_reference_bowtie2 = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38.{seq}.bt2", seq = range(1,3)),
+    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference.{id}.bt2", id = range(1,4)),
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -57,7 +58,19 @@ rule reference_index:
     "fastq_screen --get_genomes --outdir data/fastq_screen_references"
 
 # Map to mycoplasma transcriptome
+rule mycoplasma_reference:
+  input:
+    'data/mycoplasma/GCF_003663725.1_ASM366372v1_genomic.fna.gz'
+  output:
+    mycoplasma_genome = temp("results/mycoplasma_reference/mycoplasma_genome.fa"),
+    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference.{id}.bt2", id = range(1,4)),
+  shell:
+    '''
+    gzip -cd {input} > {output.mycoplasma_genome}  &&
+    bowtie2-build --seed 42 {output.mycoplasma_genome} mycoplasma_reference &&
+    mv mycoplasma_reference* results/mycoplasma_reference
+    '''
 
-# use fastq Screen for mycoplasma detection
+# Use fastq Screen for mycoplasma detection
 
 # Quantify mycoplasma expression
