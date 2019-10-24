@@ -9,7 +9,8 @@ rule all:
   input:
     mycoplasma_transcriptome = 'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz',
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
-    trimmed_fastq = expand("results/trim_reads/{base}.fq", base = input_base_fq)
+    trimmed_fastq = expand("results/trim_reads/{base}.fq", base = input_base_fq),
+    human_reference_bowtie2 = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38.{seq}.bt2", seq = range(1,3))
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -48,7 +49,12 @@ rule trim_reads:
     done
     '''
 
-# Index Mycoplasma transcriptome
+# Download reference genomes for human and mouse
+rule reference_index:
+  output:
+    expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38.{seq}.bt2", seq = range(1,3))
+  shell:
+    "fastq_screen --get_genomes --outdir data/fastq_screen_references"
 
 # Map to mycoplasma transcriptome
 
