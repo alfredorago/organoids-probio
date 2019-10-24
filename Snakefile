@@ -78,5 +78,18 @@ rule mycoplasma_reference:
     '''
 
 # Use fastq Screen for mycoplasma detection
+rule fastq_screen:
+  input:
+    fastq = expand("results/trim_reads/{basename}.fq", basename = input_base_fq),
+    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
+  output:
+    fastq_txt = expand("results/fastq_report/{basename}.txt", basename = input_base_fq),
+    fastq_png = expand("results/fastq_report/{basename}.png", basename = input_base_fq),
+  threads: 16
+  shell:
+    '''
+    fastq_screen \
+        --subset 100 --outdir results/fastq_screen --conf scripts/fastq_screen.conf --threads {threads} {input.fastq}
+    '''
 
 # Quantify mycoplasma expression
