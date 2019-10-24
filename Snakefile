@@ -36,8 +36,9 @@ rule fastqc:
     expand("results/fastqc/{base}_fastqc.html", base = input_base_fq)
   log:
     "logs/fastqc"
+  threads: 128
   shell:
-    "nice --adjustment=+10 fastqc {input.fq} -o={fq_outpath} -t=128 2> {log}"
+    "nice --adjustment=+10 fastqc {input.fq} -threads {threads} -o=results/fastqc/ 2> {log}"
 
 # Trim 20 bp from 5' end to remove primer adapter bias
 rule trim_reads:
