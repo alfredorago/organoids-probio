@@ -1,15 +1,17 @@
 # organoids-probio
-Comparinsons of gut organoid transcriptomic responses to different probiotic strains
+Comparisons of gut organoid transcriptomic responses to different probiotic strains
 
 ## Global considerations
 
-I am implementing the project as a Drake workflow. 
-The main runall script is the _drake.R file in the main working directory.
-The plan (in scripts) stores all objects for drake versioning.
-The files libraries and function store the stuff that needs to be loaded in order for the drake workflow to run.
+The workplace needs to be setup within a conda environment for snakemake. 
+This can be created by running 
 
-## Quality control
+conda env create -f envs/pymake.yaml
+or 
+conda create -n pymake -c bioconda -c conda-forge snakemake=5.7.0
 
-We store the results from fastqc, and summarize them using the fastqcr package.
-Note that fastqc analyses are *not* included in the drake workflow, only the summaries are.
-Before running those, use the fastqc.sh script to generate the fastqc reports
+Refer to the Snakefile file for the list of script to run and the dependenciesexi
+
+## DAG of the global workflow 
+
+snakemake --dag | dot -Tpdf > dag.pdf
