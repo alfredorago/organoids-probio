@@ -5,6 +5,10 @@
 *.pdf
 *.html
 
+# Results and error logs
+logs/
+output
+
 # History files
 .Rhistory
 .Rapp.history
