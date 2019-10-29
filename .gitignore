@@ -5,9 +5,8 @@
 *.pdf
 *.html
 
-# Results and error logs
+# Results
 logs/
-output
 
 # History files
 .Rhistory
