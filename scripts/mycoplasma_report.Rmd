@@ -11,15 +11,38 @@ output: html_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(janitor)
 library(here)
 print(paste("Running script from ", here()))
 ```
 
-```{r load_data, include=FALSE , echo=FALSE}
+```{r load_data, include=FALSE}
 file_location = here("results/fastq_screen/")
 mapping_count_files = list.files(path = file_location, pattern = "*_screen.txt", full.names = T) %>% 
   set_names(list.files(path = file_location, pattern = "*_screen.txt"))
-mapping_counts = map_dfr(mapping_count_files, read_tsv, skip = 1, .id = "sampleID")
+mapping_counts = map_dfr(mapping_count_files, read_tsv, skip = 1, .id = "read_id") %>%
+  mutate(
+    sample_id = str_extract(string = read_id, pattern = "A_[0-9]{1,2}")
+  ) %>% 
+  clean_names()
 ```
 
+
+Plot number of reads mapped to mycoplasma and human, separating between unique and shared, and binning the paired ends
+
+```{r plot_mapped,  echo=FALSE}
+filter(.data = mapping_counts, 
+       genome %in% c("Human", "Mycoplasma", "Rat", "Ecoli", "rRNA", "MT", "Adapters")) %>% 
+  ggplot(data = ., 
+       mapping = aes(
+         x = sample_id, 
+         y = number_one_hit_one_genome, 
+         col = genome,
+         group = read_id)
+       ) +
+  geom_point() +
+  geom_hline(yintercept = 0.1) +
+  scale_color_brewer(type = 'qual')
+
+```
 
