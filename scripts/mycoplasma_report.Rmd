@@ -1,0 +1,25 @@
+---
+title: "Mycoplasma Report"
+author: "Alfredo Rago"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+# params: 
+#  sample_id : snakemake@input_base_fq
+#  mapping_counts : snakemake@input
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(here)
+print(paste("Running script from ", here()))
+```
+
+```{r load_data, include=FALSE , echo=FALSE}
+file_location = here("results/fastq_screen/")
+mapping_count_files = list.files(path = file_location, pattern = "*_screen.txt", full.names = T) %>% 
+  set_names(list.files(path = file_location, pattern = "*_screen.txt"))
+mapping_counts = map_dfr(mapping_count_files, read_tsv, skip = 1, .id = "sampleID")
+```
+
+
