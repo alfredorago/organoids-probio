@@ -1,5 +1,9 @@
-## Snakemake logs
+# Snakemake logs
 .snakemake/
+
+# Binary figures and reports
+*.pdf
+*.html
 
 # History files
 .Rhistory
@@ -42,3 +46,5 @@ rsconnect/
 # Results and plots
 results/*
 graphs/*
+packrat/lib*/
+packrat/src/
