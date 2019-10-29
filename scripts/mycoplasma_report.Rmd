@@ -35,26 +35,64 @@ counts_report = map_dfr(mapping_count_files, read_tsv, skip = 1, .id = "read_id"
 
 ```
 
+Several cultures in the lab showed contamination from Mycoplasma, which would render the samples unusable.
+I check for contamination in the RNAseq data by mappint the reads to the Human and Mycoplasma genomes, as well as a set of reference organisms and contaminants.
+The mapping is done via the program fastq_screen, which is essentially a wrapper for bowtie2 alignment.
+
+## Raw read counts to Human and contaminants
 
 
-Plot number of reads mapped to mycoplasma and human, separating between unique and shared, and binning the paired ends
-
-```{r plot_mapped,  echo=FALSE}
+```{r mapped_counts,  echo=FALSE}
 filter(.data = counts_report, 
        genome %in% c("Human", "Mycoplasma", "Rat", "Ecoli", "rRNA", "MT", "Adapters"),
        # measurement %in% c("one_hit_one_genome", "multiple_hits_one_genome"),
        percent_number == 'number') %>% 
   ggplot(data = ., 
        mapping = aes(
-         x = sample_id, 
-         y = counts, 
+         x = counts, 
+         y = sample_id, 
          col = genome,
          group = read_id)
        ) +
   geom_point() +
   geom_hline(yintercept = 0.1) +
   scale_color_brewer(type = 'qual') +
-  facet_wrap(. ~ measurement)
+  facet_wrap(. ~ measurement) +
+  xlab("Number of reads mapped") +
+  ylab(label = "Sample ID") +
+  ggtitle(label = "Number of reads mapped to Human and contaminant genomes") +
+  theme_minimal()
 
 ```
 
+We have overall excellent mapping to human samples, and almost no mapping to other organisms. Matches in the "Multiple genomes" categories are expected, since they match orthologs between species. Unsurprisingly, we find a substantial amount of e.g. Rat-like RNA. 
+
+The only reads that map to Mycoplasma are multi-hit single genome. If these are really from Mycoplasma, then they are most likely caused by the expression of paralogs.
+
+
+## Proportions of mapped reads to Human and contaminant genomes
+
+```{r mapped_percent,  echo=FALSE}
+filter(.data = counts_report, 
+       genome %in% c("Human", "Mycoplasma", "Rat", "Ecoli", "rRNA", "MT", "Adapters"),
+       # measurement %in% c("one_hit_one_genome", "multiple_hits_one_genome"),
+       percent_number == 'percent') %>% 
+  ggplot(data = ., 
+       mapping = aes(
+         x = counts, 
+         y = sample_id, 
+         col = genome,
+         group = read_id)
+       ) +
+  geom_point() +
+  geom_hline(yintercept = 0.1) +
+  scale_color_brewer(type = 'qual') +
+  facet_wrap(. ~ measurement) +
+  xlab(label = "Percent Reads Mapped") +
+  ylab(label = "Sample ID") +
+  ggtitle(label = "Percentage of reads mapped to Human and contaminant genomes") +
+  theme_minimal()
+```
+
+Matches to human genome are spread roughly as 50% single hit and 50% multiple hit. Half of the multi-hit reads are also found in other genomes (Ribosomal, Rat and other vertebrates).
+Samples 58 and 55 show a small amount of Mycoplasma matching reads, and have a higher proportion of reads that do not map to the Human genome. These may be contaminated and should be removed from our analysis.
