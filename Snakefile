@@ -22,7 +22,7 @@ rule all:
 # Download reference mycoplasma genome
 rule download_mycoplasma:
   output:
-    'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz'
+    'data/mycoplasma/GCF_003663725.1_ASM366372v1_genomic.fna.gz'
   log:
     "logs/download_mycoplasma.txt"
   shell:
@@ -81,6 +81,7 @@ rule mycoplasma_reference:
 # Use fastq Screen for mycoplasma detection
 rule fastq_screen:
   input:
+    shared_reference_genomes = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38{suffix}", suffix = bowtie_suffixes),
     fastq = expand("results/trim_reads/{basename}.fq", basename = input_base_fq),
     mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
   output:
