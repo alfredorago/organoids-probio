@@ -20,29 +20,41 @@ print(paste("Running script from ", here()))
 file_location = here("results/fastq_screen/")
 mapping_count_files = list.files(path = file_location, pattern = "*_screen.txt", full.names = T) %>% 
   set_names(list.files(path = file_location, pattern = "*_screen.txt"))
-mapping_counts = map_dfr(mapping_count_files, read_tsv, skip = 1, .id = "read_id") %>%
-  mutate(
-    sample_id = str_extract(string = read_id, pattern = "A_[0-9]{1,2}")
-  ) %>% 
-  clean_names()
+
+counts_report = map_dfr(mapping_count_files, read_tsv, skip = 1, .id = "read_id") %>%
+  add_column(sample_id = str_extract(string = .$read_id, pattern = "A_[0-9]{1,2}"), .after = 1) %>% 
+  mutate(., 
+         read_id = str_extract(read_id, "A_[0-9]_[1,2]")) %>% 
+  clean_names() %>% 
+  rename(., number_multiple_hits_multiple_genomes = multiple_hits_multiple_genomes) %>% 
+  pivot_longer(
+    data = ., 
+    cols = number_reads_processed:percent_multiple_hits_multiple_genomes, 
+    names_pattern = "([^_]*)_(.*)", names_to = c("percent_number", "measurement"), values_to = "counts"
+  )
+
 ```
+
 
 
 Plot number of reads mapped to mycoplasma and human, separating between unique and shared, and binning the paired ends
 
 ```{r plot_mapped,  echo=FALSE}
-filter(.data = mapping_counts, 
-       genome %in% c("Human", "Mycoplasma", "Rat", "Ecoli", "rRNA", "MT", "Adapters")) %>% 
+filter(.data = counts_report, 
+       genome %in% c("Human", "Mycoplasma", "Rat", "Ecoli", "rRNA", "MT", "Adapters"),
+       # measurement %in% c("one_hit_one_genome", "multiple_hits_one_genome"),
+       percent_number == 'number') %>% 
   ggplot(data = ., 
        mapping = aes(
          x = sample_id, 
-         y = number_one_hit_one_genome, 
+         y = counts, 
          col = genome,
          group = read_id)
        ) +
   geom_point() +
   geom_hline(yintercept = 0.1) +
-  scale_color_brewer(type = 'qual')
+  scale_color_brewer(type = 'qual') +
+  facet_wrap(. ~ measurement)
 
 ```
 
