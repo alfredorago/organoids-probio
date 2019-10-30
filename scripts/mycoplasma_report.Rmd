@@ -10,10 +10,12 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(tidyr)
 library(ggplot2)
 library(janitor)
 library(here)
-print(paste("Running script from ", here()))
+library(knitr)
+library(kableExtra)
 ```
 
 ```{r load_data, include=FALSE}
@@ -35,9 +37,18 @@ counts_report = map_dfr(mapping_count_files, read_tsv, skip = 1, .id = "read_id"
 
 ```
 
+```{r species_set, include=F}
+species_list = filter(counts_report, !grepl("%", genome)) %>%
+  pull(., genome) %>% 
+  unique() %>% 
+  paste0(collapse = ", ") 
+```
+
 Several cultures in the lab showed contamination from Mycoplasma, which would render the samples unusable.
 I check for contamination in the RNAseq data by mappint the reads to the Human and Mycoplasma genomes, as well as a set of reference organisms and contaminants.
 The mapping is done via the program fastq_screen, which is essentially a wrapper for bowtie2 alignment.
+We align to the following species set: `r species_list`.
+
 
 ## Raw read counts to Human and contaminants
 
