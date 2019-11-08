@@ -12,12 +12,8 @@ bowtie_suffixes = (
 # rule all to generate all output files at once
 rule all:
   input:
-    mycoplasma_transcriptome = 'data/mycoplasma/GCF_003663725.1_ASM366372v1_rna_from_genomic.fna.gz',
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
-    trimmed_fastq = expand("results/trim_reads/{base}.fq", base = input_base_fq),
-    human_reference_bowtie2 = expand("data/fastq_screen_references/FastQ_Screen_Genomes/Human/Homo_sapiens.GRCh38{suffix}", suffix = bowtie_suffixes),
-    mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
-    fastq_txt = expand("results/fastq_screen/{basename}.txt", basename = input_base_fq),
+    fastq_txt = expand("results/fastq_screen/{basename}_screen.txt", basename = input_base_fq),
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
