@@ -85,8 +85,8 @@ rule fastq_screen:
     fastq = expand("results/trim_reads/{basename}.fq", basename = input_base_fq),
     mycoplasma_reference = expand("results/mycoplasma_reference/mycoplasma_reference{suffix}", suffix = bowtie_suffixes),
   output:
-    fastq_txt = expand("results/fastq_screen/{basename}.txt", basename = input_base_fq),
-    fastq_html = expand("results/fastq_screen/{basename}.html", basename = input_base_fq),
+    fastq_txt = expand("results/fastq_screen/{basename}_screen.txt", basename = input_base_fq),
+    fastq_html = expand("results/fastq_screen/{basename}_screen.html", basename = input_base_fq),
   threads: 16
   shell:
     '''
