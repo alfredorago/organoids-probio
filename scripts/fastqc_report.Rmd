@@ -9,7 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggplot2)
-library(drake)
 library(fastqcr)
 library(here)
 loadd(fastqc_dir)
