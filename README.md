@@ -16,6 +16,7 @@ Refer to the Snakefile file for the list of script to run and the dependenciesex
 
 ## DAG of the global workflow 
 <!---
-snakemake --dag | dot -Tgif > dag.gif
+snakemake --dag | dot -Tpng > dag.png
 --->
+
 ![Workflow Graph](dag.png)
