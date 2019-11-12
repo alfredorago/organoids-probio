@@ -3,9 +3,6 @@ title: "Mycoplasma Report"
 author: "Alfredo Rago"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
-# params: 
-#  sample_id : snakemake@input_base_fq
-#  mapping_counts : snakemake@input
 ---
 
 ```{r setup, include=FALSE}
@@ -53,7 +50,7 @@ We align to the following species set: `r species_list`.
 ## Raw read counts to Human and contaminants
 
 
-```{r mapped_counts,  echo=FALSE}
+```{r mapped_counts,  echo=FALSE, fig.height=15, fig.width=12}
 filter(.data = counts_report, 
        genome %in% c("Human", "Mycoplasma", "Rat", "Ecoli", "rRNA", "MT", "Adapters"),
        # measurement %in% c("one_hit_one_genome", "multiple_hits_one_genome"),
@@ -83,7 +80,7 @@ The only reads that map to Mycoplasma are multi-hit single genome. If these are 
 
 ## Proportions of mapped reads to Human and contaminant genomes
 
-```{r mapped_percent,  echo=FALSE}
+```{r mapped_percent, echo=FALSE, fig.height=15, fig.width=12}
 filter(.data = counts_report, 
        genome %in% c("Human", "Mycoplasma", "Rat", "Ecoli", "rRNA", "MT", "Adapters"),
        # measurement %in% c("one_hit_one_genome", "multiple_hits_one_genome"),
@@ -106,4 +103,4 @@ filter(.data = counts_report,
 ```
 
 Matches to human genome are spread roughly as 50% single hit and 50% multiple hit. Half of the multi-hit reads are also found in other genomes (Ribosomal, Rat and other vertebrates).
-Samples 58 and 55 show a small amount of Mycoplasma matching reads, and have a higher proportion of reads that do not map to the Human genome. These may be contaminated and should be removed from our analysis.
+Samples 55-59 show a small amount of Mycoplasma matching reads, and have a higher proportion of reads that do not map to the Human genome. These may be contaminated and should be removed from our analysis.
