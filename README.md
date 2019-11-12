@@ -19,4 +19,5 @@ Refer to the Snakefile file for the list of script to run and the dependenciesex
 snakemake --dag | dot -Tpng > dag.png
 --->
 
+
 ![Workflow Graph](dag.png)
