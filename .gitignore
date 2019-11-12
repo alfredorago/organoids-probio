@@ -6,7 +6,7 @@
 *.html
 
 # Make an exception for DAG figure (so we can include it in the readme page)
-!dag.pdf
+!dag.png
 
 # Results
 logs/

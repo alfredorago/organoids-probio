@@ -15,5 +15,7 @@ conda create -n pymake -c bioconda -c conda-forge snakemake=5.7.0
 Refer to the Snakefile file for the list of script to run and the dependenciesexi
 
 ## DAG of the global workflow 
-
-snakemake --dag | dot -Tpdf > dag.pdf
+<!---
+snakemake --dag | dot -Tgif > dag.gif
+--->
+![Workflow Graph](dag.png)
