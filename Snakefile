@@ -13,7 +13,7 @@ bowtie_suffixes = (
 rule all:
   input:
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
-    fastq_txt = expand("results/fastq_screen/{basename}_screen.txt", basename = input_base_fq),
+    mycoplasma_report = "results/reports/mycoplasma_report.html"
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -91,3 +91,15 @@ rule fastq_screen:
         --subset 0 --outdir results/fastq_screen --conf scripts/fastq_screen.conf --threads {threads} {input.fastq}
     '''
 
+# Create report on mycoplasma contmination
+rule mycoplasma_report:
+  input:
+    fastq_txt = expand("results/fastq_screen/{basename}_screen.txt", basename = input_base_fq),
+    script = "scripts/mycoplasma_report.Rmd"
+  output:
+    "results/reports/mycoplasma_report.html"
+  shell:
+    '''
+    Rscript -e "rmarkdown::render('{input.script}')"
+    mv scripts/mycoplasma_report.html results/reports/mycoplasma_report.html
+    '''
