@@ -17,8 +17,7 @@ rule all:
   input:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
-    mycoplasma_report = "results/reports/mycoplasma_report.html",
-    index = "data/salmon/human_transcriptome_index/hsap_salmon_index"
+    mycoplasma_report = "results/reports/mycoplasma_report.html"
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -112,11 +111,15 @@ rule mycoplasma_report:
 # Download human reference transcriptome from ENSEMBL
 rule download_human:
   output:
-    'data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz'
+    transcriptome = 'data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz',
+    genome = 'data/Human/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz2'
   log:
     "logs/download_human.txt"
   shell:
-    'wget -r -np -k -N -nd -P data/Human/ ftp://ftp.ensembl.org/pub/release-98/fasta/homo_sapiens/cdna/ 2> {log}'
+    '''
+    wget -r -np -k -N -nd -P data/Human/ ftp://ftp.ensembl.org/pub/release-98/fasta/homo_sapiens/cdna/ 2> {log}
+    curl -o {output.genome} ftp://ftp.ensembl.org/pub/release-98/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+    '''
 
 # Index human genome for salmon quantification
 rule salmon_index:
