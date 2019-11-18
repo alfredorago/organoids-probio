@@ -16,6 +16,7 @@ rule all:
     in_path = input_path_fq
   input:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
+    human_transcriptome = 'data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz',
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html"
 
@@ -107,3 +108,15 @@ rule mycoplasma_report:
     Rscript -e "rmarkdown::render('{input.script}')"
     mv scripts/mycoplasma_report.html results/reports/mycoplasma_report.html
     '''
+
+# Download human reference transcriptome from ENSEMBL
+rule download_human:
+  output:
+    'data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz'
+  log:
+    "logs/download_human.txt"
+  shell:
+    'wget -r -np -k -N -nd -P data/Human/ ftp://ftp.ensembl.org/pub/release-98/fasta/homo_sapiens/cdna/ 2> {log}'
+
+
+
