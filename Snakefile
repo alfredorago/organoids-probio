@@ -11,7 +11,11 @@ bowtie_suffixes = (
 
 # rule all to generate all output files at once
 rule all:
+  params:
+    in_base = input_base_fq,
+    in_path = input_path_fq
   input:
+    fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html"
 
