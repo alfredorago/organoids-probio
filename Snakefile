@@ -17,7 +17,8 @@ rule all:
   input:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
-    mycoplasma_report = "results/reports/mycoplasma_report.html"
+    mycoplasma_report = "results/reports/mycoplasma_report.html",
+    index = "results/salmon/human_transcriptome_index/ref_idexing"
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -123,19 +124,28 @@ rule download_human:
 
 # Index human genome for salmon quantification
 rule salmon_index:
-    input:
-        "data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz"
-    output:
-        index = "data/salmon/human_transcriptome_index/hsap_salmon_index",
-        decoys = "data/salmon/human_transcriptome_index/hsap_salmon_decoys"
-    log:
-        "logs/salmon/transcriptome_index.log"
-    threads: 16
-    params:
-        # optional parameters
-        extra=""
-    shell:
-        "salmon salmon index -t {input} -i {output.index} -p {threads} --decoys {output.decoys} -k 31"
+  input:
+      transcripts = "data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz",
+      genome = "data/Human/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz2"
+  output:
+      index = "results/salmon/human_transcriptome_index/ref_idexing",
+      decoys = "results/salmon/human_transcriptome_index/decoys.txt",
+      gentrome = "results/salmon/human_transcriptome_index/gentrome/fa.gz"
+  log:
+      "logs/salmon/transcriptome_index.log"
+  threads: 16
+  shell:
+      '''
+      # Crate decoy file
+      grep "^>" <(zcat {input.genome}) | cut -d " " -f 1 > {output.decoys}
+      sed -i -e 's/>//g' {output.decoys}
+
+      # Concatenate genome and transcriptome
+      cat {input.transcripts} {input.genome} > {output.gentrome}
+
+      # Create index
+      salmon index -t {output.gentrome} -i {output.index} -p {threads} -d {output.decoys} -k 31
+      '''
 
 
 
