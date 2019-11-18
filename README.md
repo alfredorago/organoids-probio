@@ -31,3 +31,21 @@ Created using the command
 snakemake --dag | dot -Tpng > dag.png
 ```
 
+## Testing plan
+2 hours post-exposure, aka same time window as biopsy paper
+
+0) PCA/clustering on all samples without LGG
+
+1) 3D Homemade (27 samples, one clonal line per sample) vs 3D Intesticult (multiple cultures from the same clonal line)
+
+2) 2D Intesticult (3 samples per clonal line) vs 3D Intesticult
+between vs within genome variance in intesticult lines
+
+3) 2D intesticult vs 2D intesticult + LGG
+3 samples per clonal line in each
+We can use this as a reproducibility check once we get the final data on bacterial exposure
+
+3b) 2d organoids w&wo LGG + biopsy samples (PCA & Hclust)
+patient/treatment/sample type/cell line
+
+PCA comparing the LGG response vector of biopsy samples to the LGG response vector of 2D organoid samples
