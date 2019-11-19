@@ -3,6 +3,8 @@
 # Define input path for fastq files
 input_path_fq = "data/X201SC19060242-Z01-F001/raw_data/"
 input_base_fq, = glob_wildcards("data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
+sample_id = glob_wildcards("data/X201SC19060242-Z01-F001/raw_data/{base}_1.fq.gz")
+
 # Define standard bowtie2 reference suffixes
 bowtie_suffixes = (
   *[".{id}.bt2".format(id = i) for i in range(1,5)],
@@ -147,5 +149,32 @@ rule salmon_index:
       salmon index -t {output.gentrome} -i {output.index} -p 16 -d {output.decoys} -k 31
       '''
 
+# Quantify read counts via Samon
+rule salmon_quant:
+  input:
+    index = "results/salmon/human_transcriptome_index/ref_idexing",
+    reads_1 = [expand("results/trim_reads/{id}_1.fq", id = id) for id in sample_id],
+    reads_2 = [expand("results/trim_reads/{id}_2.fq", id = id) for id in sample_id]
 
+  output:
+    quant = "results/salmon/salmon_quant/quant.sf"
+
+  params:
+    threads = 16,
+    libtype = "ISF"
+
+  shell:
+    '''
+    salmon quant \
+            -i {input.index} \
+            -l {params.libtype} \
+            -1 {input.reads_1} \
+            -2 {input.reads_2} \
+            -o {output.quant} \
+            --validateMappings \
+            --numBootstraps \
+            --gcBias \
+            --writeUnmappedNames \
+            --threads {params.threads}
+    '''
 
