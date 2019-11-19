@@ -18,7 +18,7 @@ rule all:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html",
-    index = "results/salmon/human_transcriptome_index/ref_idexing"
+    index = directory("results/salmon/human_transcriptome_index/ref_idexing")
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -128,23 +128,23 @@ rule salmon_index:
       transcripts = "data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz",
       genome = "data/Human/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz2"
   output:
-      index = "results/salmon/human_transcriptome_index/ref_idexing",
+      index = directory("results/salmon/human_transcriptome_index/ref_idexing"),
       decoys = "results/salmon/human_transcriptome_index/decoys.txt",
-      gentrome = "results/salmon/human_transcriptome_index/gentrome/fa.gz"
-  log:
-      "logs/salmon/transcriptome_index.log"
-  threads: 16
+      gentrome = directory("results/salmon/human_transcriptome_index/gentrome")
   shell:
       '''
       # Crate decoy file
+      echo "Creating Decoy File"
       grep "^>" <(zcat {input.genome}) | cut -d " " -f 1 > {output.decoys}
       sed -i -e 's/>//g' {output.decoys}
 
       # Concatenate genome and transcriptome
+      echo "Concatenating genome and transcriptome"
       cat {input.transcripts} {input.genome} > {output.gentrome}
 
       # Create index
-      salmon index -t {output.gentrome} -i {output.index} -p {threads} -d {output.decoys} -k 31
+      echo "Creating index"
+      salmon index -t {output.gentrome} -i {output.index} -p 16 -d {output.decoys} -k 31
       '''
 
 
