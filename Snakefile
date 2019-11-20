@@ -19,7 +19,8 @@ rule all:
   input:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
-    mycoplasma_report = "results/reports/mycoplasma_report.html"
+    mycoplasma_report = "results/reports/mycoplasma_report.html",
+    quant = "results/salmon/salmon_quant"
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -168,11 +169,12 @@ rule salmon_quant:
     reads_2 = [expand("results/trim_reads/{id}_2.fq", id = id) for id in sample_id]
 
   output:
-    quant = "results/salmon/salmon_quant/quant.sf"
+    quant = directory("results/salmon/salmon_quant")
 
   params:
     threads = 16,
-    libtype = "ISF"
+    libtype = "ISF",
+    numBootstraps = 10
 
   shell:
     '''
@@ -183,7 +185,7 @@ rule salmon_quant:
             -2 {input.reads_2} \
             -o {output.quant} \
             --validateMappings \
-            --numBootstraps \
+            --numBootstraps {params.numBootstraps}\
             --gcBias \
             --writeUnmappedNames \
             --threads {params.threads}
