@@ -20,7 +20,7 @@ rule all:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html",
-    quant = "results/salmon/salmon_quant"
+    quant = [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id]
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -169,26 +169,37 @@ rule salmon_quant:
     reads_2 = [expand("results/trim_reads/{id}_2.fq", id = id) for id in sample_id]
 
   output:
-    quant = directory("results/salmon/salmon_quant")
-
-  threads: 16
+    quant = directory([expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id])
 
   params:
     libtype = "ISF",
-    numBootstraps = 10
+    numBootstraps = 30,
+    minScoreFraction = 0.8,
+    jobs = 3,
+    salmonThreads = 5
+
+  threads: 15
 
   shell:
     '''
+
+    parallel --link --jobs {params.jobs} \
     salmon quant \
             -i {input.index} \
             -l {params.libtype} \
-            -1 {input.reads_1} \
-            -2 {input.reads_2} \
-            -o {output.quant} \
+            -1 {{1}} \
+            -2 {{2}} \
+            -o {{3}} \
             --validateMappings \
+            --minScoreFraction {params.minScoreFraction} \
             --numBootstraps {params.numBootstraps}\
             --gcBias \
+            --seqBias \
             --writeUnmappedNames \
-            --threads {threads}
+            --threads {params.salmonThreads} \
+    ::: {input.reads_1} \
+    ::: {input.reads_2} \
+    ::: {output.quant}
+
     '''
 
