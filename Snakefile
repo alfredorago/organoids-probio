@@ -130,11 +130,12 @@ rule salmon_index:
       genome = "data/Human/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz2"
 
   output:
-      decoys = "results/salmon/human_transcriptome_index/decoys.txt"
+      decoys = temp("results/salmon/human_transcriptome_index/decoys.txt"),
+      gentrome = temp("results/salmon/human_transcriptome_index/gentrome.fa"),
+      index = directory("results/salmon/human_transcriptome_index/ref_idexing"),
+
 
   params:
-      gentrome = "results/salmon/human_transcriptome_index/gentrome.fa",
-      index = directory("results/salmon/human_transcriptome_index/ref_idexing"),
       threads = 16,
       kmer = 31
 
@@ -142,18 +143,18 @@ rule salmon_index:
       '''
       # Crate decoy file
       echo "Creating Decoy File"
-      grep "^>" <(zcat {input.genome}) | cut -d " " -f 1 > {output.decoys}
-      sed -i -e 's/>//g' {output.decoys}
+      grep "^>" <(zcat {input.genome}) | cut -d " " -f 1 > {output.decoys} &&
+      sed -i -e 's/>//g' {output.decoys} &&
 
       # Concatenate genome and transcriptome
       echo "Concatenating genome and transcriptome"
-      zcat {input.transcripts} {input.genome} > {params.gentrome}
+      zcat {input.transcripts} {input.genome} > {output.gentrome} &&
 
       # Create index
       echo "Creating index"
       salmon index \
-                -t {params.gentrome} \
-                -i {params.index} \
+                -t {output.gentrome} \
+                -i {output.index} \
                 -d {output.decoys} \
                 -p {params.threads} \
                 -k {params.kmer}
