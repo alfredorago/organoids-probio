@@ -135,9 +135,9 @@ rule salmon_index:
       gentrome = temp("results/salmon/human_transcriptome_index/gentrome.fa"),
       index = directory("results/salmon/human_transcriptome_index/ref_idexing"),
 
+  threads: 16
 
   params:
-      threads = 16,
       kmer = 31
 
   shell:
@@ -157,7 +157,7 @@ rule salmon_index:
                 -t {output.gentrome} \
                 -i {output.index} \
                 -d {output.decoys} \
-                -p {params.threads} \
+                -p {threads} \
                 -k {params.kmer}
       '''
 
@@ -171,8 +171,9 @@ rule salmon_quant:
   output:
     quant = directory("results/salmon/salmon_quant")
 
+  threads: 16
+
   params:
-    threads = 16,
     libtype = "ISF",
     numBootstraps = 10
 
@@ -188,6 +189,6 @@ rule salmon_quant:
             --numBootstraps {params.numBootstraps}\
             --gcBias \
             --writeUnmappedNames \
-            --threads {params.threads}
+            --threads {threads}
     '''
 
