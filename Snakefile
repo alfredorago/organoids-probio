@@ -172,18 +172,18 @@ rule salmon_quant:
     quant = directory([expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id])
 
   params:
-    libtype = "ISF",
+    libtype = "ISR",
     numBootstraps = 30,
     minScoreFraction = 0.8,
-    jobs = 3,
+    jobs = 6,
     salmonThreads = 5
 
-  threads: 15
+  threads: 30
 
   shell:
     '''
 
-    parallel --link --jobs {params.jobs} \
+    parallel --link --jobs {params.jobs} --nice 20 \
     salmon quant \
             -i {input.index} \
             -l {params.libtype} \
