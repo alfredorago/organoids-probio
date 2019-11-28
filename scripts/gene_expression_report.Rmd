@@ -1,0 +1,26 @@
+---
+title: "Gene Expression Report"
+author: "Alfredo Rago"
+date: "11/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(magrittr)
+library(tximport)
+```
+
+
+```{r import_data}
+expression_data <- 
+  list.files(path = here("results/salmon/salmon_quant"), pattern = "quant.sf", recursive = T, full.names = T) %>% 
+  tximport(files = ., type = "salmon", txIn = T, txOut = F)
+```
+
+
+```{r MA_plots, echo=FALSE}
+
+```
