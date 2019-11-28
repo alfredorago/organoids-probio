@@ -11,13 +11,25 @@ library(tidyverse)
 library(here)
 library(magrittr)
 library(tximport)
+library(biomaRt)
 ```
 
+
+```{r download_gene_table}
+transcript_to_gene_id = getBM(
+  attributes = list('ensembl_transcript_id', "ensembl_gene_id"), 
+  mart = useEnsembl(biomart = 'ensembl', dataset = 'hsapiens_gene_ensembl')
+)
+```
 
 ```{r import_data}
 expression_data <- 
   list.files(path = here("results/salmon/salmon_quant"), pattern = "quant.sf", recursive = T, full.names = T) %>% 
-  tximport(files = ., type = "salmon", txIn = T, txOut = F)
+  tximport(
+    files = ., type = "salmon", 
+    txIn = T, txOut = F, 
+    countsFromAbundance = 'lengthScaledTPM', varReduce = T, 
+    tx2gene = transcript_to_gene_id, ignoreTxVersion = T)
 ```
 
 
