@@ -30,6 +30,8 @@ expression_data <-
     txIn = T, txOut = F, 
     countsFromAbundance = 'lengthScaledTPM', varReduce = T, 
     tx2gene = transcript_to_gene_id, ignoreTxVersion = T)
+
+save(expression_data, file = here('results/tximport/expression_data.Rdata'))
 ```
 
 
