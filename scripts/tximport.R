@@ -24,4 +24,4 @@ expression_data <-
     tx2gene = transcript_to_gene_id, ignoreTxVersion = T)
 
 # Save output
-save(expression_data, file = snakemake@output[[1]])
+saveRDS(object = expression_data, file = snakemake@output[[1]])

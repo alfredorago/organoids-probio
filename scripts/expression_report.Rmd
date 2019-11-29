@@ -1,0 +1,31 @@
+---
+title: "Expression Report"
+author: "Alfredo Rago"
+date: "11/29/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(magrittr)
+library(here)
+```
+
+
+```{r import_data, include=T}
+# Replace with python input after finalization
+expression_data <- here("results/tximport/expression_data.Rdata") %>% 
+  readRDS(.)
+```
+
+
+```{r PCA, echo=FALSE}
+
+
+```
+
+```{r hclust, echo=FALSE}
+
+
+```
