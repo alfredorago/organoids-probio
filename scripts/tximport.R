@@ -16,7 +16,8 @@ transcript_to_gene_id = getBM(
 
 # Convert Salmon output to expression table
 expression_data <-
-  paste(snakemake@input[[1]], 'quant.sf', sep = '/') %>%
+  unlist(snakemake@input) %>%
+  paste(., 'quant.sf', sep = '/') %>%
   tximport(
     files = ., type = "salmon",
     txIn = T, txOut = F,
