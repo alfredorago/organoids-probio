@@ -212,3 +212,12 @@ rule tximport:
    'results/tximport/expression_data.Rdata'
   script:
     'scripts/tximport.R'
+
+# Import reads and feature metadata into R via tximeta
+rule tximeta:
+  input:
+    [expand("results/salmon/salmon_quant/{id}/quant.sf", id = id) for id in sample_id]
+  output:
+   'results/tximeta/gene_data.Rdata'
+  script:
+    'scripts/tximeta.R'
