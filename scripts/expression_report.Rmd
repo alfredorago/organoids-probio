@@ -7,22 +7,73 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 library(tidyverse)
 library(magrittr)
 library(here)
+library(SummarizedExperiment)
+library(WGCNA)
+library(ggrepel)
 ```
 
 
 ```{r import_data, include=T}
 # Replace with python input after finalization
-expression_data <- here("results/tximport/expression_data.Rdata") %>% 
+gene_data <- here("results/tximeta/gene_data.Rdata") %>% 
   readRDS(.)
+
+abundance_matrix <- 
+  assay(gene_data, 2) %>% 
+  t()
+
+```
+
+```{r filter_data}
+goodGenes <- goodSamplesGenes(datExpr = abundance_matrix, minNSamples = 2)
+
+summary(goodGenes$goodGenes)
+summary(goodGenes$goodSamples)
+
+abundance_matrix_filtered <- abundance_matrix[,which(goodGenes$goodGenes)]
 ```
 
 
 ```{r PCA, echo=FALSE}
+pca_data <- prcomp(x = t(abundance_matrix_filtered), center = T, scale. = T)
+plot(pca_data)
 
+pca_percent_variance <- 
+  summary(pca_data) %$% 
+  importance[2,] %>% 
+  multiply_by(., 100) %>% 
+  round(digits = 3) %>% 
+  paste0("PC", 1:length(.), " (", ., "% variance)")
 
+pca_data$rotation %>% 
+  as_tibble() %>% 
+  rownames_to_column(var = "sample_ID") %>% 
+  ggplot(
+    data = ., 
+    aes(x = PC1, y = PC2, label = sample_ID)
+  ) + 
+  geom_point() +
+  geom_text_repel() +
+  ggtitle(label = "PCA of samples annotated by gene expression") +
+  xlab(label = pca_percent_variance[1]) +
+  ylab(label = pca_percent_variance[2])
+
+pca_data$rotation %>% 
+  as_tibble() %>% 
+  rownames_to_column(var = "sample_ID") %>% 
+  ggplot(
+    data = ., 
+    aes(x = PC2, y = PC3, label = sample_ID)
+  ) + 
+  geom_point() +
+  geom_text_repel() +
+  ggtitle(label = "PCA of samples annotated by gene expression") +
+  xlab(label = pca_percent_variance[2]) +
+  ylab(label = pca_percent_variance[3])
 ```
 
 ```{r hclust, echo=FALSE}
