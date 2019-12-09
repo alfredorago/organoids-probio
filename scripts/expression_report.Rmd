@@ -67,14 +67,13 @@ pca_data$rotation %>%
   rownames_to_column(var = "sample_ID") %>% 
   ggplot(
     data = ., 
-    aes(x = PC2, y = PC3, label = sample_ID)
+    aes(x = PC3, y = PC2, label = sample_ID)
   ) + 
   geom_point() +
   geom_text_repel() +
   ggtitle(label = "PCA of samples annotated by gene expression") +
-  xlab(label = pca_percent_variance[2]) +
-  ylab(label = pca_percent_variance[3])
-```
+  xlab(label = pca_percent_variance[3]) +
+  ylab(label = pca_percent_variance[2])
 
 ```{r hclust, echo=FALSE}
 
