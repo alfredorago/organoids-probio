@@ -75,7 +75,22 @@ pca_data$rotation %>%
   xlab(label = pca_percent_variance[3]) +
   ylab(label = pca_percent_variance[2])
 
+
+```
+
 ```{r hclust, echo=FALSE}
+expr_hclust <- 
+  str_extract(string = row.names(abundance_matrix_filtered), pattern = "[:digit:]{1,2}$") %>% 
+  str_pad(string = ., 2, pad = "0") %>% 
+  set_rownames(x = abundance_matrix_filtered, value = .) %>% 
+  dist(x = ., method = 'euclidean') %>% 
+  hclust(d = ., method = 'average')
 
-
+plot(
+  x = expr_hclust, 
+  main = "Hierarchical clustering between samples",
+  ylab = "Euclidean distance between samples",
+  xlab = "Sample ID",
+  hang = -1
+)
 ```
