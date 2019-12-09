@@ -49,7 +49,7 @@ abundance_matrix_filtered <- abundance_matrix[,which(good_genes$goodGenes)]
 
 
 ```{r PCA, echo=FALSE}
-pca_data <- prcomp(x = t(abundance_matrix_filtered), center = T, scale. = T)
+pca_data <- prcomp(x = abundance_matrix_filtered, center = T, scale. = T)
 plot(pca_data)
 
 pca_percent_variance <- 
@@ -60,16 +60,15 @@ pca_percent_variance <-
   paste0("PC", 1:length(.), " (", ., "% variance)")
 
 odd_samples = 
-  which(pca_data$rotation[,3] <= -0.2) %>% 
-  as.integer() %>% 
-  str_pad(string = ., 2, pad = "0")
+  which(pca_data$x[,2] < -40) %>% 
+  as.integer() 
 
-pca_data$rotation %>% 
+pca_data$x %>% 
   as_tibble() %>% 
   rownames_to_column(var = "sample_ID") %>% 
   ggplot(
     data = ., 
-    aes(x = PC1, y = PC2, label = sample_ID, col = PC3 < -0.2)
+    aes(x = PC1, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
   ) + 
   geom_point() +
   geom_text_repel() +
@@ -77,12 +76,12 @@ pca_data$rotation %>%
   xlab(label = pca_percent_variance[1]) +
   ylab(label = pca_percent_variance[2])
 
-pca_data$rotation %>% 
+pca_data$x %>% 
   as_tibble() %>% 
   rownames_to_column(var = "sample_ID") %>% 
   ggplot(
     data = ., 
-    aes(x = PC3, y = PC2, label = sample_ID, col = PC3 < -0.2)
+    aes(x = PC3, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
   ) + 
   geom_point() +
   geom_text_repel() +
@@ -103,7 +102,7 @@ expr_hclust <-
 expr_dend <- as.dendrogram(expr_hclust)
 labels_colors(expr_dend) <-
   ifelse(
-    labels(expr_dend) %in% odd_samples,
+    labels(expr_dend) %in% str_pad(string = odd_samples, 2, pad = "0"),
     "purple",
     "darkblue"
   )
