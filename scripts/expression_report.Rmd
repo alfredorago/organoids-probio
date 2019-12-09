@@ -6,14 +6,15 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
+knitr::opts_chunk$set(include = FALSE)
 library(tidyverse)
 library(magrittr)
 library(here)
 library(SummarizedExperiment)
 library(WGCNA)
 library(ggrepel)
+library(dendextend)
+library(DESeq2)
 ```
 
 
@@ -24,17 +25,26 @@ gene_data <- here("results/tximeta/gene_data.Rdata") %>%
 
 abundance_matrix <- 
   assay(gene_data, 2) %>% 
+  ceiling(.) %>% 
+  vst() %>% 
   t()
-
 ```
 
 ```{r filter_data}
-goodGenes <- goodSamplesGenes(datExpr = abundance_matrix, minNSamples = 2)
+good_genes <- apply(
+  X = abundance_matrix, 
+  MARGIN = c(1,2), 
+  FUN = function(x){ifelse(x < 6, 0, x)}
+) %>% 
+  goodSamplesGenes(
+    datExpr = ., 
+    minNSamples = 2)
 
-summary(goodGenes$goodGenes)
-summary(goodGenes$goodSamples)
+summary(good_genes$goodGenes)
+summary(good_genes$goodSamples)
 
-abundance_matrix_filtered <- abundance_matrix[,which(goodGenes$goodGenes)]
+abundance_matrix_filtered <- abundance_matrix[,which(good_genes$goodGenes)]
+
 ```
 
 
@@ -49,12 +59,17 @@ pca_percent_variance <-
   round(digits = 3) %>% 
   paste0("PC", 1:length(.), " (", ., "% variance)")
 
+odd_samples = 
+  which(pca_data$rotation[,3] <= -0.2) %>% 
+  as.integer() %>% 
+  str_pad(string = ., 2, pad = "0")
+
 pca_data$rotation %>% 
   as_tibble() %>% 
   rownames_to_column(var = "sample_ID") %>% 
   ggplot(
     data = ., 
-    aes(x = PC1, y = PC2, label = sample_ID)
+    aes(x = PC1, y = PC2, label = sample_ID, col = PC3 < -0.2)
   ) + 
   geom_point() +
   geom_text_repel() +
@@ -67,14 +82,13 @@ pca_data$rotation %>%
   rownames_to_column(var = "sample_ID") %>% 
   ggplot(
     data = ., 
-    aes(x = PC3, y = PC2, label = sample_ID)
+    aes(x = PC3, y = PC2, label = sample_ID, col = PC3 < -0.2)
   ) + 
   geom_point() +
   geom_text_repel() +
   ggtitle(label = "PCA of samples annotated by gene expression") +
   xlab(label = pca_percent_variance[3]) +
   ylab(label = pca_percent_variance[2])
-
 
 ```
 
@@ -84,13 +98,18 @@ expr_hclust <-
   str_pad(string = ., 2, pad = "0") %>% 
   set_rownames(x = abundance_matrix_filtered, value = .) %>% 
   dist(x = ., method = 'euclidean') %>% 
-  hclust(d = ., method = 'average')
+  hclust(d = ., method = 'single')
+
+expr_dend <- as.dendrogram(expr_hclust)
+labels_colors(expr_dend) <-
+  ifelse(
+    labels(expr_dend) %in% odd_samples,
+    "purple",
+    "darkblue"
+  )
 
 plot(
-  x = expr_hclust, 
-  main = "Hierarchical clustering between samples",
-  ylab = "Euclidean distance between samples",
-  xlab = "Sample ID",
-  hang = -1
+  expr_dend,
+  main = "Euclidean distance between samples"
 )
 ```
