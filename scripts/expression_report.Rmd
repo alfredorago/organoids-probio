@@ -1,12 +1,13 @@
 ---
 title: "Expression Report"
 author: "Alfredo Rago"
-date: "11/29/2019"
+date: "`r format(Sys.time(), '%d %b %Y')`"
 output: html_document
 ---
+## Data cleaning and overview
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(include = FALSE)
+```{r setup, include=F}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, cache = TRUE)
 library(tidyverse)
 library(magrittr)
 library(here)
@@ -15,10 +16,10 @@ library(WGCNA)
 library(ggrepel)
 library(dendextend)
 library(DESeq2)
+library(knitr)
+library(kableExtra)
 ```
-
-
-```{r import_data, include=T}
+```{r import_data, message=FALSE, warning=FALSE, include=FALSE}
 # Replace with python input after finalization
 gene_data <- here("results/tximeta/gene_data.Rdata") %>% 
   readRDS(.)
@@ -29,34 +30,40 @@ abundance_matrix <-
   vst() %>% 
   t()
 ```
+```{r filter_data, message=FALSE, warning=FALSE, include=FALSE}
+abundance_threshold = 6
+min_samples = 2
 
-```{r filter_data}
 good_genes <- apply(
   X = abundance_matrix, 
   MARGIN = c(1,2), 
-  FUN = function(x){ifelse(x < 6, 0, x)}
+  FUN = function(x){ifelse(x < abundance_threshold, 0, x)}
 ) %>% 
   goodSamplesGenes(
     datExpr = ., 
-    minNSamples = 2)
-
-summary(good_genes$goodGenes)
-summary(good_genes$goodSamples)
+    minNSamples = min_samples)
 
 abundance_matrix_filtered <- abundance_matrix[,which(good_genes$goodGenes)]
-
 ```
 
+This report includes the first overview of the data from the 2D organoid projects.
+Since we did not detect any mycoplasma contamination we did not remove any sample, nor reads.
+The full reproducible workflow up to this point is available at https://github.com/alfredorago/organoids-probio.
 
+The number of total annotated genes after Salmon quantification and matching with the human genome data via tximeta are `r ncol(abundance_matrix)`. 
+We threshold genes by setting all counts lower than `r abundance_threshold` to 0, and removing all genes which are not expressed in at least `r min_samples` samples.
+This selection procedure discards `r sum(good_genes$goodGenes == FALSE)` genes, so all further analyses consider only `r sum(good_genes$goodGenes)` genes.
+
+
+## PCA
 ```{r PCA, echo=FALSE}
 pca_data <- prcomp(x = abundance_matrix_filtered, center = T, scale. = T)
-plot(pca_data)
 
 pca_percent_variance <- 
   summary(pca_data) %$% 
   importance[2,] %>% 
   multiply_by(., 100) %>% 
-  round(digits = 3) %>% 
+  round(digits = 2) %>% 
   paste0("PC", 1:length(.), " (", ., "% variance)")
 
 odd_samples = 
@@ -67,7 +74,7 @@ pca_x <- pca_data$x %>%
   as_tibble() %>% 
   rownames_to_column(var = "sample_ID")
 
-ggplot(
+pca_scatterplot <- ggplot(
   data = pca_x, 
   aes(x = PC1, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
 ) + 
@@ -77,26 +84,39 @@ ggplot(
   xlab(label = pca_percent_variance[1]) +
   ylab(label = pca_percent_variance[2]) +
   labs(col = 'Odd Samples')
-
-ggplot(
-  data = pca_x, 
-  aes(x = PC3, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
-) + 
-  geom_point() +
-  geom_text_repel() +
-  ggtitle(label = "PCA of samples annotated by gene expression") +
-  xlab(label = pca_percent_variance[3]) +
-  ylab(label = pca_percent_variance[2]) +
-  labs(col = 'Odd Samples')
-
 ```
 
-```{r correlation_scatterplot, fig.height=8, fig.width=10, message=FALSE}
+We perform a quick PCA analysis to detect if there are any patterns in our dataset and whether there are any outliers.
+We need 22(!) principal components to describe 95% of the variance in our dataset. 
+This shows that there are several independent sources of variation between our samples and is a good thing. 
+With just 5 principal components we can already describe 80% of our dataset, which seems like a reasonable amount of precision.
+
+```{r pca_variance, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(formattable)
+
+tibble(
+  PC = 1:nrow(pca_data$x) %>% str_pad(string = ., 2, pad = "0") %>% paste("PC", .),
+  Variance = summary(pca_data) %$% importance[2,] %>% multiply_by(., 100) %>% round(digits = 2),
+  Cumulative_Variance = cumsum(Variance) 
+) %>%
+  filter(.,
+         Cumulative_Variance < 90
+  ) %>% 
+  mutate(., 
+         Variance = Variance %>% color_bar("lightgreen")(.),
+         Cumulative_Variance = Cumulative_Variance %>% color_bar("lightblue")(.)
+  ) %>% 
+  kable("html", escape = F, align = 'r', digits = 3, longtable = F) %>%
+  kable_styling(c("hover", "striped"), full_width = T)
+```
+
+
+```{r correlation_scatterplot, echo=FALSE, fig.height=8, fig.width=10, message=FALSE}
 library(GGally)
 
 ggpairs(data = pca_x, columns = 2:6, aes(col = sample_ID %in% odd_samples, label = sample_ID), columnLabels = pca_percent_variance[1:5]) + theme_minimal()
 ```
-```{r hclust, echo=FALSE}
+```{r hclust, echo=FALSE, fig.width=12}
 expr_hclust <- 
   str_extract(string = row.names(abundance_matrix_filtered), pattern = "[:digit:]{1,2}$") %>% 
   str_pad(string = ., 2, pad = "0") %>% 
