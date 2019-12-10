@@ -49,6 +49,7 @@ abundance_matrix_filtered <- abundance_matrix[,which(good_genes$goodGenes)]
 This report includes the first overview of the data from the 2D organoid projects.
 Since we did not detect any mycoplasma contamination we did not remove any sample, nor reads.
 The full reproducible workflow up to this point is available at https://github.com/alfredorago/organoids-probio.
+Note: the repository is private so please ask to be added as a collaborator if you want to inspect the workflow in detail.
 
 The number of total annotated genes after Salmon quantification and matching with the human genome data via tximeta are `r ncol(abundance_matrix)`. 
 We threshold genes by setting all counts lower than `r abundance_threshold` to 0, and removing all genes which are not expressed in at least `r min_samples` samples.
@@ -56,6 +57,7 @@ This selection procedure discards `r sum(good_genes$goodGenes == FALSE)` genes, 
 
 
 ## PCA
+
 ```{r PCA, echo=FALSE}
 pca_data <- prcomp(x = abundance_matrix_filtered, center = T, scale. = T)
 
@@ -86,10 +88,13 @@ pca_scatterplot <- ggplot(
   labs(col = 'Odd Samples')
 ```
 
+### Variance distribution
+
 We perform a quick PCA analysis to detect if there are any patterns in our dataset and whether there are any outliers.
 We need 22(!) principal components to describe 95% of the variance in our dataset. 
 This shows that there are several independent sources of variation between our samples and is a good thing. 
 With just 5 principal components we can already describe 80% of our dataset, which seems like a reasonable amount of precision.
+With 10 PCs we can push the precision to almost 90% of the total variance.
 
 ```{r pca_variance, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 library(formattable)
@@ -110,12 +115,25 @@ tibble(
   kable_styling(c("hover", "striped"), full_width = T)
 ```
 
+### Global patterns
+
+I look at the data using the first 5 PCs. The samples separate cleanly in a set of compact clusters, which suggests that we have strong differences between some treatments at least.
+PC 5 provides almost no separation between clusters, so we can likely focus on the first 4 PCs.
+I am slightly suspicious of the samples in blue, which separate in a rather scattered cluster alongside PC 2 and 3, and show extreme values alongside all other PCs as well.
 
 ```{r correlation_scatterplot, echo=FALSE, fig.height=8, fig.width=10, message=FALSE}
 library(GGally)
 
 ggpairs(data = pca_x, columns = 2:6, aes(col = sample_ID %in% odd_samples, label = sample_ID), columnLabels = pca_percent_variance[1:5]) + theme_minimal()
 ```
+
+## Hierarchical clustering
+
+I also compare the samples via hierarchical clustering, using euclidean distance between them in gene-space and single-spanning trees.
+In other words, we group the samples that most look like each other in their gene expression profiles.
+The "odd" samples look widely distributed across the tree, which I would not expect from true outliers. 
+As soon as we get the rest of the metadata we can look for signal from our treatments in the hierarchical tree and/or create a heatmap.
+
 ```{r hclust, echo=FALSE, fig.width=12}
 expr_hclust <- 
   str_extract(string = row.names(abundance_matrix_filtered), pattern = "[:digit:]{1,2}$") %>% 
