@@ -63,31 +63,31 @@ odd_samples =
   which(pca_data$x[,2] < -40) %>% 
   as.integer() 
 
-pca_data$x %>% 
+pca_x <- pca_data$x %>% 
   as_tibble() %>% 
-  rownames_to_column(var = "sample_ID") %>% 
-  ggplot(
-    data = ., 
-    aes(x = PC1, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
-  ) + 
+  rownames_to_column(var = "sample_ID")
+
+ggplot(
+  data = pca_x, 
+  aes(x = PC1, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
+) + 
   geom_point() +
   geom_text_repel() +
   ggtitle(label = "PCA of samples annotated by gene expression") +
   xlab(label = pca_percent_variance[1]) +
-  ylab(label = pca_percent_variance[2])
+  ylab(label = pca_percent_variance[2]) +
+  labs(col = 'Odd Samples')
 
-pca_data$x %>% 
-  as_tibble() %>% 
-  rownames_to_column(var = "sample_ID") %>% 
-  ggplot(
-    data = ., 
-    aes(x = PC3, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
-  ) + 
+ggplot(
+  data = pca_x, 
+  aes(x = PC3, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
+) + 
   geom_point() +
   geom_text_repel() +
   ggtitle(label = "PCA of samples annotated by gene expression") +
   xlab(label = pca_percent_variance[3]) +
-  ylab(label = pca_percent_variance[2])
+  ylab(label = pca_percent_variance[2]) +
+  labs(col = 'Odd Samples')
 
 ```
 
