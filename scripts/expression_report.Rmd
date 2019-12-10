@@ -91,6 +91,11 @@ pca_data$x %>%
 
 ```
 
+```{r correlation_scatterplot, fig.height=8, fig.width=10, message=FALSE}
+library(GGally)
+
+ggpairs(data = pca_x, columns = 2:6, aes(col = sample_ID %in% odd_samples, label = sample_ID), columnLabels = pca_percent_variance[1:5]) + theme_minimal()
+```
 ```{r hclust, echo=FALSE}
 expr_hclust <- 
   str_extract(string = row.names(abundance_matrix_filtered), pattern = "[:digit:]{1,2}$") %>% 
