@@ -8,22 +8,26 @@ output: html_document
 
 ```{r setup, include=F}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE, cache = TRUE)
+# Tidyverse things
 library(tidyverse)
 library(magrittr)
 library(here)
+# Read experiment data
 library(SummarizedExperiment)
+# Improved plots
 library(ggrepel)
 library(dendextend)
+# Pretty markdown tables
 library(knitr)
 library(kableExtra)
+library(formattable)
 ```
 ```{r import_data, message=FALSE, warning=FALSE, include=FALSE}
 # Replace with python input after finalization
-gene_data <- here("results/tximeta/gene_data.Rdata") %>% 
-  readRDS(.)
-
 abundance_matrix <- 
-  assay(gene_data, 2) %>% 
+  here("results/tximeta/gene_data.Rdata") %>% 
+  readRDS(.) %>% 
+  assay(., 2) %>% 
   ceiling(.) %>% 
   DESeq2::vst() %>% 
   t()
@@ -95,8 +99,6 @@ With just 5 principal components we can already describe 80% of our dataset, whi
 With 10 PCs we can push the precision to almost 90% of the total variance.
 
 ```{r pca_variance, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-library(formattable)
-
 tibble(
   PC = 1:nrow(pca_data$x) %>% str_pad(string = ., 2, pad = "0") %>% paste("PC", .),
   Variance = summary(pca_data) %$% importance[2,] %>% multiply_by(., 100) %>% round(digits = 2),
