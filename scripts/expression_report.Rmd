@@ -153,3 +153,22 @@ plot(
   main = "Euclidean distance between samples"
 )
 ```
+
+
+```{r pheatmap, fig.height=10, fig.width=12, message=FALSE, warning=FALSE}
+scale(
+  x = abundance_matrix_filtered, 
+  center = T, scale = T
+) %>% 
+  pheatmap::pheatmap(
+    mat = .,
+    color = viridis::viridis(n=20),
+    cutree_rows = 5,
+    cutree_cols = 6,
+    show_rownames = T,
+    show_colnames = F,
+    legend = F,
+    main = "Heatmap of Samples \n clustered by normalized gene expression \n"
+  )
+```
+
