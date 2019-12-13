@@ -12,10 +12,8 @@ library(tidyverse)
 library(magrittr)
 library(here)
 library(SummarizedExperiment)
-library(WGCNA)
 library(ggrepel)
 library(dendextend)
-library(DESeq2)
 library(knitr)
 library(kableExtra)
 ```
@@ -27,7 +25,7 @@ gene_data <- here("results/tximeta/gene_data.Rdata") %>%
 abundance_matrix <- 
   assay(gene_data, 2) %>% 
   ceiling(.) %>% 
-  vst() %>% 
+  DESeq2::vst() %>% 
   t()
 ```
 ```{r filter_data, message=FALSE, warning=FALSE, include=FALSE}
@@ -39,7 +37,7 @@ good_genes <- apply(
   MARGIN = c(1,2), 
   FUN = function(x){ifelse(x < abundance_threshold, 0, x)}
 ) %>% 
-  goodSamplesGenes(
+  WGCNA::goodSamplesGenes(
     datExpr = ., 
     minNSamples = min_samples)
 
@@ -122,9 +120,7 @@ PC 5 provides almost no separation between clusters, so we can likely focus on t
 I am slightly suspicious of the samples in blue, which separate in a rather scattered cluster alongside PC 2 and 3, and show extreme values alongside all other PCs as well.
 
 ```{r correlation_scatterplot, echo=FALSE, fig.height=8, fig.width=10, message=FALSE}
-library(GGally)
-
-ggpairs(data = pca_x, columns = 2:6, aes(col = sample_ID %in% odd_samples, label = sample_ID), columnLabels = pca_percent_variance[1:5]) + theme_minimal()
+GGally::ggpairs(data = pca_x, columns = 2:6, aes(col = sample_ID %in% odd_samples, label = sample_ID), columnLabels = pca_percent_variance[1:5]) + theme_minimal()
 ```
 
 ## Hierarchical clustering
