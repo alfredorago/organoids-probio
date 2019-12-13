@@ -137,6 +137,7 @@ expr_hclust <-
   str_extract(string = row.names(abundance_matrix_filtered), pattern = "[:digit:]{1,2}$") %>% 
   str_pad(string = ., 2, pad = "0") %>% 
   set_rownames(x = abundance_matrix_filtered, value = .) %>% 
+  scale(x = ., center = T, scale = T) %>% 
   dist(x = ., method = 'euclidean') %>% 
   hclust(d = ., method = 'single')
 
