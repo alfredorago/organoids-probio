@@ -213,6 +213,16 @@ rule tximport:
   script:
     'scripts/tximport.R'
 
+# Convert sample metadata to tidy csv table
+rule metadata_import:
+  input:
+    patient_data = 'data/experiment_metadata/Clinical_characteristics_Herlevstudy.xlsx',
+    sample_treatment = 'data/experiment_metadata/In vitro trial RNA sample overwiev.xlsx'
+  output:
+    'results/metadata_import/experiment_metadata.csv'
+  script:
+    'scripts/metadata_import.R'
+
 # Import reads and feature metadata into R via tximeta
 rule tximeta:
   input:
