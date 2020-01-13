@@ -3,7 +3,7 @@
 # Define input path for fastq files
 input_path_fq = "data/X201SC19060242-Z01-F001/raw_data/"
 input_base_fq, = glob_wildcards("data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
-sample_id = glob_wildcards("data/X201SC19060242-Z01-F001/raw_data/{base}_1.fq.gz")
+sample_id = ["A_" + str(i) for i in range(1,73)]
 
 # Define standard bowtie2 reference suffixes
 bowtie_suffixes = (
@@ -226,7 +226,8 @@ rule metadata_import:
 # Import reads and feature metadata into R via tximeta
 rule tximeta:
   input:
-    [expand("results/salmon/salmon_quant/{id}/quant.sf", id = id) for id in sample_id]
+    salmon_files = [expand("results/salmon/salmon_quant/{id}/quant.sf", id = id) for id in sample_id],
+    sample_metadata = "results/metadata_import/experiment_metadata.csv"
   output:
    'results/tximeta/gene_data.Rdata'
   script:

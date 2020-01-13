@@ -1,5 +1,6 @@
 ### Import data from salmon raw output into R
-# Note: this script uses tximport as installed from the github repository, since the bioconductor version for R3.5 has bugs
+# Note: this script uses tximport as installed from the github repository:
+# the bioconductor version for R3.5 has bugs
 
 # Set library to local folder
 .libPaths(
@@ -13,18 +14,18 @@
 library(magrittr)
 library(tximeta)
 library(tidyverse)
+library(SummarizedExperiment)
 
-# List salmon files and sample names
+# List salmon files and sample names, plus metadata
 column_data <-
-  tibble(
-    files = unlist(snakemake@input)
-  ) %>%
+  read_csv(file = snakemake@input[["sample_metadata"]], col_names = TRUE) %>%
   mutate(
     .,
+    files = snakemake@input[["salmon_files"]],
     names = str_extract(string = files, pattern = "[:upper:]_[:digit:]+")
   )
 
-# Retrieve feature metadata
+# Retrieve feature metadata (transcript names)
 # NOTE: We lose all features that lack metadata at this step
 setTximetaBFC(dir = "data/tximetaBFC")
 
