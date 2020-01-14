@@ -204,15 +204,6 @@ rule salmon_quant:
 
     '''
 
-# Import reads into R via tximport
-rule tximport:
-  input:
-    [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id]
-  output:
-   'results/tximport/expression_data.Rdata'
-  script:
-    'scripts/tximport.R'
-
 # Convert sample metadata to tidy csv table
 rule metadata_import:
   input:
