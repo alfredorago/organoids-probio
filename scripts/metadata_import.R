@@ -30,6 +30,7 @@ sample_treatment <-
             patient_id = str_extract(string = id, pattern = "^[1,2]0[0-9]{2}") %>% as.factor(.),
             treatment = str_extract(string = id, pattern = "_[C,L,3]") %>% factor(x = ., levels = c("_C", "_L", "_3"), labels = c("Control", "LGG", "3D")),
             replicate = str_extract(string = id, pattern = "[1-3]$"),
+            laboratory = ifelse(grepl(pattern = "chr", x = id), "CH", "BIO") %>% factor(.),
             batch = purification_round
   )
 
