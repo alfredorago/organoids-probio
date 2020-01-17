@@ -32,7 +32,7 @@ column_data <-
            )) %>%
   mutate(
     .,
-    files = snakemake@input[["salmon_files"]],
+    files = snakemake@input[["salmon_dirs"]] %>% paste0(., "/quant.sf"),
     names = str_extract(string = files, pattern = "[:upper:]_[:digit:]+")
   )
 
