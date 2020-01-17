@@ -18,7 +18,17 @@ library(SummarizedExperiment)
 
 # List salmon files and sample names, plus metadata
 column_data <-
-  read_csv(file = snakemake@input[["sample_metadata"]], col_names = TRUE) %>%
+  read_csv(file = snakemake@input[["sample_metadata"]],
+           col_names = TRUE,
+           col_types = cols(
+             tube_id = "c",
+             patient_id = "c",
+             treatment = col_factor(levels = c("Control", "LGG", "3D"), ordered = FALSE),
+             replicate = "c",
+             batch = "c",
+             sex = col_factor(levels = c("f","m"), ordered = FALSE),
+             room = "c"
+           )) %>%
   mutate(
     .,
     files = snakemake@input[["salmon_files"]],
