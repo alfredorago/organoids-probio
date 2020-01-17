@@ -173,3 +173,11 @@ scale(
   )
 ```
 
+```{r}
+
+p <- plotPCA(vsd, intgroup = c("treatment","patient_id"), returnData = T)
+ggplot(p, aes(x = PC1, y = PC2, col = patient_id)) +
+  geom_point() +
+  facet_wrap(~ treatment)
+```
+
