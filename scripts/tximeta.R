@@ -15,6 +15,7 @@ library(magrittr)
 library(tximeta)
 library(tidyverse)
 library(SummarizedExperiment)
+library(DESeq2)
 
 # List salmon files and sample names, plus metadata
 column_data <-
@@ -56,3 +57,8 @@ gene_data <- summarizeToGene(
 
 # Save output
 saveRDS(object = gene_data, file = snakemake@output[[1]])
+
+# Convert to DESeq object
+#
+# gene_data_de <- DESeqDataSet(se = gene_data, design = ~ treatment)
+# vsd <- vst(gene_data_de)
