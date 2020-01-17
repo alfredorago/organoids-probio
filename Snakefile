@@ -132,7 +132,7 @@ rule salmon_index:
       genome = "data/Human/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz2"
 
   output:
-      decoys = temp("results/salmon/human_transcriptome_index/decoys.txt"),
+      decoys = temp("results/salmon/human_transcriptomindex/decoys.txt"),
       gentrome = temp("results/salmon/human_transcriptome_index/gentrome.fa"),
       index = directory("results/salmon/human_transcriptome_index/ref_idexing"),
 
@@ -176,8 +176,8 @@ rule salmon_quant:
     libtype = "ISR",
     numBootstraps = 30,
     minScoreFraction = 0.8,
-    jobs = 6,
-    salmonThreads = 5
+    jobs = lambda wildcards, threads: threads//5,
+    salmonThreads = 5,
 
   threads: 30
 
