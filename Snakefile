@@ -3,7 +3,7 @@
 # Define input path for fastq files
 input_path_fq = "data/X201SC19060242-Z01-F001/raw_data/"
 input_base_fq, = glob_wildcards("data/X201SC19060242-Z01-F001/raw_data/{base}.fq.gz")
-sample_id = ["A_" + str(i) for i in range(1,73)]
+sample_id = ["A_" + str(i) for i in range(1,6)]
 
 # Define standard bowtie2 reference suffixes
 bowtie_suffixes = (

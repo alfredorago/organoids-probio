@@ -29,7 +29,8 @@ column_data <-
              batch = "c",
              sex = col_factor(levels = c("f","m"), ordered = FALSE),
              room = "c"
-           )) %>%
+           ))  %>%
+  magrittr::extract(1:5,) %>%
   mutate(
     .,
     files = snakemake@input[["salmon_dirs"]] %>% paste0(., "/quant.sf"),
