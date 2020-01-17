@@ -20,7 +20,7 @@ rule all:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html",
-    quant = [expand("results/salmon/salmon_quant/{id}/quant.sf", id = id) for id in sample_id],
+    quant = [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id],
     tximeta = 'results/tximeta/gene_data.Rdata'
 
 # Download reference mycoplasma genome
@@ -170,7 +170,7 @@ rule salmon_quant:
     reads_2 = [expand("results/trim_reads/{id}_2.fq", id = id) for id in sample_id]
 
   output:
-    quant = [expand("results/salmon/salmon_quant/{id}/quant.sf", id = id) for id in sample_id]
+    outdir = directory([expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id])
 
   params:
     libtype = "ISR",
@@ -200,7 +200,7 @@ rule salmon_quant:
             --threads {params.salmonThreads} \
     ::: {input.reads_1} \
     ::: {input.reads_2} \
-    ::: {output.quant}
+    ::: {output.outdir}
 
     '''
 
@@ -217,7 +217,7 @@ rule metadata_import:
 # Import reads and feature metadata into R via tximeta
 rule tximeta:
   input:
-    salmon_files = [expand("results/salmon/salmon_quant/{id}/quant.sf", id = id) for id in sample_id],
+    salmon_dirs = [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id],
     sample_metadata = "results/metadata_import/experiment_metadata.csv"
   output:
    'results/tximeta/gene_data.Rdata'
