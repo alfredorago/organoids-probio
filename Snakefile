@@ -112,31 +112,31 @@ rule mycoplasma_report:
     mv scripts/mycoplasma_report.html results/reports/mycoplasma_report.html
     '''
 
-# Download human reference transcriptome from ENSEMBL
+# Download human reference transcriptome from Gencode v32
 rule download_human:
   output:
-    transcriptome = 'data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz',
-    genome = 'data/Human/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz2'
+    transcriptome = 'data/Human/gencode.v32.transcripts.fa.gz',
+    genome = 'data/Human/gencode.v32.annotation.gtf.gz'
   log:
     "logs/download_human.txt"
   shell:
     '''
-    wget -r -np -k -N -nd -P data/Human/ ftp://ftp.ensembl.org/pub/release-98/fasta/homo_sapiens/cdna/ 2> {log}
-    curl -o {output.genome} ftp://ftp.ensembl.org/pub/release-98/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+    curl -o {output.transcriptome} ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_32/gencode.v32.transcripts.fa.gz 2> {log}
+    curl -o {output.genome} ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_32/GRCh38.primary_assembly.genome.fa.gz
     '''
 
 # Index human genome for salmon quantification
 rule salmon_index:
   input:
-      transcripts = "data/Human/Homo_sapiens.GRCh38.cdna.all.fa.gz",
-      genome = "data/Human/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz2"
+      transcriptome = "data/Human/gencode.v32.transcripts.fa.gz",
+      genome = "data/Human/gencode.v32.annotation.gtf.gz"
 
   output:
-      decoys = temp("results/salmon/human_transcriptomindex/decoys.txt"),
-      gentrome = temp("results/salmon/human_transcriptome_index/gentrome.fa"),
+      decoys = "results/salmon/human_transcriptome_index/decoys.txt",
+      gentrome = "results/salmon/human_transcriptome_index/gentrome.fa",
       index = directory("results/salmon/human_transcriptome_index/ref_idexing"),
 
-  threads: 16
+  threads: 20
 
   params:
       kmer = 31
@@ -150,7 +150,7 @@ rule salmon_index:
 
       # Concatenate genome and transcriptome
       echo "Concatenating genome and transcriptome"
-      zcat {input.transcripts} {input.genome} > {output.gentrome} &&
+      zcat {input.transcriptome} {input.genome} > {output.gentrome} &&
 
       # Create index
       echo "Creating index"
@@ -159,7 +159,8 @@ rule salmon_index:
                 -i {output.index} \
                 -d {output.decoys} \
                 -p {threads} \
-                -k {params.kmer}
+                -k {params.kmer} \
+                --gencode
       '''
 
 # Quantify read counts via Samon
@@ -178,13 +179,15 @@ rule salmon_quant:
     minScoreFraction = 0.8,
     jobs = lambda wildcards, threads: threads//5,
     salmonThreads = 5,
+    outdir = [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id]
 
   threads: 30
 
   shell:
     '''
 
-    parallel --link --jobs {params.jobs} --nice 20 \
+    ionice -c2 -n7 \
+    parallel --link --jobs {params.jobs} \
     salmon quant \
             -i {input.index} \
             -l {params.libtype} \
