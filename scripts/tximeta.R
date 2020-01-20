@@ -50,8 +50,8 @@ transcript_data <- tximeta(
 gene_data <- summarizeToGene(
   object = transcript_data,
   varReduce = TRUE,
-  ignoreTxVersion = TRUE,
-  ignoreAfterBar = TRUE,
+  ignoreTxVersion = FALSE,
+  ignoreAfterBar = FALSE,
   countsFromAbundance = 'lengthScaledTPM'
 )
 
