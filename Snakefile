@@ -223,6 +223,7 @@ rule tximeta:
     salmon_dirs = [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id],
     sample_metadata = "results/metadata_import/experiment_metadata.csv"
   output:
-   'results/tximeta/gene_data.Rdata'
+   'results/tximeta/gene_data.Rdata',
+   'results/tximeta/variance_stabilized_counts.csv'
   script:
     'scripts/tximeta.R'

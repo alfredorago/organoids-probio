@@ -55,10 +55,11 @@ gene_data <- summarizeToGene(
   countsFromAbundance = 'lengthScaledTPM'
 )
 
-# Save output
+## Save output
+# As summarizedExperiment
 saveRDS(object = gene_data, file = snakemake@output[[1]])
-
-# Convert to DESeq object
-#
-# gene_data_de <- DESeqDataSet(se = gene_data, design = ~ treatment)
-# vsd <- vst(gene_data_de)
+# As matrix of variance stabilized counts
+vsd = DESeqDataSet(se = gene_data, design = ~ treatment) %>%
+  vst(object = ., blind = T) %>%
+  assay() %>%
+  write.csv(file = snakemake@output[[2]])
