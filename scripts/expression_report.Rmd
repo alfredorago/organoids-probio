@@ -14,6 +14,7 @@ library(magrittr)
 library(here)
 # Read experiment data
 library(SummarizedExperiment)
+library(DESeq2)
 # Improved plots
 library(ggrepel)
 library(dendextend)
@@ -24,81 +25,34 @@ library(formattable)
 ```
 ```{r import_data, message=FALSE, warning=FALSE, include=FALSE}
 # Replace with python input after finalization
-abundance_matrix <- 
-  here("results/tximeta/gene_data.Rdata") %>% 
-  readRDS(.) %>% 
-  assay(., 2) %>% 
-  ceiling(.) %>% 
-  DESeq2::vst() %>% 
-  t()
+experiment_data <- readRDS(file = here("results/tximeta/gene_data.Rdata"))
 ```
-```{r filter_data, message=FALSE, warning=FALSE, include=FALSE}
-abundance_threshold = 6
-min_samples = 2
 
-good_genes <- apply(
-  X = abundance_matrix, 
-  MARGIN = c(1,2), 
-  FUN = function(x){ifelse(x < abundance_threshold, 0, x)}
-) %>% 
-  WGCNA::goodSamplesGenes(
-    datExpr = ., 
-    minNSamples = min_samples)
-
-abundance_matrix_filtered <- abundance_matrix[,which(good_genes$goodGenes)]
-```
 
 This report includes the first overview of the data from the 2D organoid projects.
 Since we did not detect any mycoplasma contamination we did not remove any sample, nor reads.
 The full reproducible workflow up to this point is available at https://github.com/alfredorago/organoids-probio.
 Note: the repository is private so please ask to be added as a collaborator if you want to inspect the workflow in detail.
 
-The number of total annotated genes after Salmon quantification and matching with the human genome data via tximeta are `r ncol(abundance_matrix)`. 
-We threshold genes by setting all counts lower than `r abundance_threshold` to 0, and removing all genes which are not expressed in at least `r min_samples` samples.
-This selection procedure discards `r sum(good_genes$goodGenes == FALSE)` genes, so all further analyses consider only `r sum(good_genes$goodGenes)` genes.
-
+The number of total annotated genes after Salmon quantification and matching with the human genome data via tximeta are `r nrow(assay(experiment_data))`. 
 
 ## PCA
 
-```{r PCA, echo=FALSE}
-pca_data <- prcomp(x = abundance_matrix_filtered, center = T, scale. = T)
-
-pca_percent_variance <- 
-  summary(pca_data) %$% 
-  importance[2,] %>% 
-  multiply_by(., 100) %>% 
-  round(digits = 2) %>% 
-  paste0("PC", 1:length(.), " (", ., "% variance)")
-
-odd_samples = 
-  which(pca_data$x[,2] < -40) %>% 
-  as.integer() 
-
-pca_x <- pca_data$x %>% 
-  as_tibble() %>% 
-  rownames_to_column(var = "sample_ID")
-
-pca_scatterplot <- ggplot(
-  data = pca_x, 
-  aes(x = PC1, y = PC2, label = sample_ID, col = sample_ID %in% odd_samples)
-) + 
-  geom_point() +
-  geom_text_repel() +
-  ggtitle(label = "PCA of samples annotated by gene expression") +
-  xlab(label = pca_percent_variance[1]) +
-  ylab(label = pca_percent_variance[2]) +
-  labs(col = 'Odd Samples')
-```
 
 ### Variance distribution
 
 We perform a quick PCA analysis to detect if there are any patterns in our dataset and whether there are any outliers.
-We need 22(!) principal components to describe 95% of the variance in our dataset. 
+We need 24(!) principal components to describe 90% of the variance in our dataset. 
 This shows that there are several independent sources of variation between our samples and is a good thing. 
-With just 5 principal components we can already describe 80% of our dataset, which seems like a reasonable amount of precision.
-With 10 PCs we can push the precision to almost 90% of the total variance.
+We can already describe 80% of our dataset with 9 PCs, which seems like a reasonable amount of precision, or 75% of the total variance with just 6 PCs.
 
 ```{r pca_variance, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+pca_data <- 
+  DESeqDataSet(se = experiment_data, design = ~ treatment) %>%
+  vst(object = ., blind = T) %>% 
+  assay(.) %>%  
+  t() %>%  prcomp(., center = T) 
+
 tibble(
   PC = 1:nrow(pca_data$x) %>% str_pad(string = ., 2, pad = "0") %>% paste("PC", .),
   Variance = summary(pca_data) %$% importance[2,] %>% multiply_by(., 100) %>% round(digits = 2),
@@ -115,39 +69,86 @@ tibble(
   kable_styling(c("hover", "striped"), full_width = T)
 ```
 
+```{r PCA, echo=FALSE}
+vsd <- DESeqDataSet(se = experiment_data, design = ~ patient_id + treatment) %>% 
+  vst(., blind = F)
+
+plotPCA(vsd, intgroup = c("treatment","patient_id", "batch"), returnData = T, ntop = 1000) %>% 
+  ggplot(., aes(x = PC1, y = PC2, col = patient_id)) +
+  geom_point() +
+  facet_wrap(. ~ treatment)
+```
+
+Plotting just the 2 first PCs (58% of the total variance) we can notice that there is a strong effect of genotypes: samples of the same patient cluster closer together.
+3D organoids show much lower variance than 2D ones, but this could be either because the variance of 3D samples is on the other PCs (i.e. different genes are involved in the response of 3D vs 2D organoids).
+
 ### Global patterns
 
-I look at the data using the first 5 PCs. The samples separate cleanly in a set of compact clusters, which suggests that we have strong differences between some treatments at least.
-PC 5 provides almost no separation between clusters, so we can likely focus on the first 4 PCs.
-I am slightly suspicious of the samples in blue, which separate in a rather scattered cluster alongside PC 2 and 3, and show extreme values alongside all other PCs as well.
+I look at the data using the first 5 PCs. 
+PC 1 separates the 2D and 3D organoids, and is likely capturing all differences between the 2 treatments.
+PC 2 looks like it is separating the two pseudo-groups of patients in 2D organoids: patients 1002, 1003, 1004, 1015 are positive and 1006, 2006 and 2007 are negative. 
+This signal is quite strong (20% of the total variance), but I have no idea where it is coming from. I have already ruled out effects from sex and batch/lab. 
+We likely need to investgate this difference if we want to use these data.
 
 ```{r correlation_scatterplot, echo=FALSE, fig.height=8, fig.width=10, message=FALSE}
-GGally::ggpairs(data = pca_x, columns = 2:6, aes(col = sample_ID %in% odd_samples, label = sample_ID), columnLabels = pca_percent_variance[1:5]) + theme_minimal()
+pca_data_frame <- colData(x = experiment_data) %>% 
+  as_tibble() %>% 
+  bind_cols(., as_tibble(pca_data$x))
+
+GGally::ggpairs(data = pca_data_frame, columns = 10:14, 
+                aes(col = treatment)) 
 ```
+
+## Linear modelling of PCs
+
+I checked whether any of the PCs is associated with LGG treatment among 2D samples.
+I do this by checking the distance between LGG and control for the same individuals.
+No PC shows a consistent association with LGG treatment.
+This suggests that if there is an effect, it might be caused by very few genes.
+
+```{r deltas, message=FALSE, warning=FALSE}
+pca_deltas <- pca_data_frame %>% 
+  filter(treatment != '3D') %>% 
+  extract(,1:19) %>% 
+  pivot_longer(., 10:19, names_to = 'PC', values_to = 'scores') %>% 
+  select(-names, -tube_id) %>% 
+  pivot_wider(., names_from = treatment, values_from = scores) %>% 
+  mutate(
+    delta = Control - LGG
+  ) %>% 
+  select(-Control, -LGG) %>% 
+  pivot_wider(., names_from = PC, values_from = delta)
+
+GGally::ggpairs(data = pca_deltas, columns = 7:10, 
+                aes(col = patient_id)) 
+
+```
+
 
 ## Hierarchical clustering
 
 I also compare the samples via hierarchical clustering, using euclidean distance between them in gene-space and single-spanning trees.
 In other words, we group the samples that most look like each other in their gene expression profiles.
-The "odd" samples look widely distributed across the tree, which I would not expect from true outliers. 
-As soon as we get the rest of the metadata we can look for signal from our treatments in the hierarchical tree and/or create a heatmap.
+The second biggest split is between 3D and 2D samples, but the biggest outliers are 2D samples from patients 1002 and 1015 which are separate from both other 2D samples and 3D samples.
+Within 3D and 2D samples, there is also a strong genotype effect: samples from the same patient cluster together regardless of treatment with LGG.
+LGG treatment has a low to no effect, and we will likely need to control for genotype and 2D/3D effects before we are able to detect anything.
 
 ```{r hclust, echo=FALSE, fig.width=12}
 expr_hclust <- 
-  str_extract(string = row.names(abundance_matrix_filtered), pattern = "[:digit:]{1,2}$") %>% 
-  str_pad(string = ., 2, pad = "0") %>% 
-  set_rownames(x = abundance_matrix_filtered, value = .) %>% 
+  assay(vsd) %>% 
+  set_colnames(value = paste(vsd$treatment, vsd$patient_id, sep = "_")) %>% 
+  t() %>% 
   scale(x = ., center = T, scale = T) %>% 
   dist(x = ., method = 'euclidean') %>% 
   hclust(d = ., method = 'single')
 
 expr_dend <- as.dendrogram(expr_hclust)
+
 labels_colors(expr_dend) <-
-  ifelse(
-    labels(expr_dend) %in% str_pad(string = odd_samples, 2, pad = "0"),
-    "purple",
-    "darkblue"
-  )
+  colData(experiment_data)[match(labels(expr_dend), colData(experiment_data)$tube_id),] %>% 
+  extract(, 'treatment') %>% 
+  factor(x = ., levels = c("Control", "LGG", "3D"), labels = c("orange", "blue", "darkgreen")) %>% 
+  as.character()
 
 plot(
   expr_dend,
@@ -157,15 +158,25 @@ plot(
 
 
 ```{r pheatmap, fig.height=10, fig.width=12, message=FALSE, warning=FALSE}
-scale(
-  x = abundance_matrix_filtered, 
-  center = T, scale = T
-) %>% 
+variance_rank <- function(x, minMedian, proportion){
+  # Return the top proportion of rows ranked by variance
+  row_median = apply(x, MARGIN = 1, stats::median)
+  y = x[which(row_median >= minMedian),]
+  variance = apply(y, MARGIN = 1, stats::var)
+  y = x[base::order(variance, decreasing = T),]
+  y = y[1:floor(nrow(y)*proportion),]
+  y
+}
+
+assay(vsd) %>% 
+  set_colnames(value = paste(vsd$treatment, vsd$patient_id, sep = "_")) %>% 
+  variance_rank(proportion = 0.2, minMedian = 4) %>% 
+  scale(x = ., center = TRUE, scale = TRUE) %>% 
+  t() %>% 
   pheatmap::pheatmap(
     mat = .,
     color = viridis::viridis(n=20),
-    cutree_rows = 5,
-    cutree_cols = 6,
+    cutree_rows = 4,
     show_rownames = T,
     show_colnames = F,
     legend = F,
@@ -173,11 +184,4 @@ scale(
   )
 ```
 
-```{r}
-
-p <- plotPCA(vsd, intgroup = c("treatment","patient_id"), returnData = T)
-ggplot(p, aes(x = PC1, y = PC2, col = patient_id)) +
-  geom_point() +
-  facet_wrap(~ treatment)
-```
 
