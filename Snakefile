@@ -20,6 +20,7 @@ rule all:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html",
+    expression_report = "results/reports/expression_report.html",
     quant = [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id],
     tximeta = 'results/tximeta/gene_data.Rdata'
 
@@ -136,7 +137,7 @@ rule salmon_index:
       gentrome = "results/salmon/human_transcriptome_index/gentrome.fa",
       index = directory("results/salmon/human_transcriptome_index/ref_idexing"),
 
-  threads: 20
+  threads: 30
 
   params:
       kmer = 31
@@ -227,3 +228,16 @@ rule tximeta:
    'results/tximeta/variance_stabilized_counts.csv'
   script:
     'scripts/tximeta.R'
+
+# Create knitr expression report from main experiment (includes PCA, heatmap etc)
+rule expression_report:
+  input:
+    gene_data = 'results/tximeta/gene_data.Rdata',
+    script = "scripts/expression_report.Rmd"
+  output:
+    "results/reports/expression_report.html"
+  shell:
+    '''
+    Rscript -e "rmarkdown::render('{input.script}')"
+    mv scripts/expression_report.html {output}
+    '''

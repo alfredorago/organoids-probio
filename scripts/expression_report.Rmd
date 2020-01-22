@@ -24,7 +24,6 @@ library(kableExtra)
 library(formattable)
 ```
 ```{r import_data, message=FALSE, warning=FALSE, include=FALSE}
-# Replace with python input after finalization
 experiment_data <- readRDS(file = here("results/tximeta/gene_data.Rdata"))
 ```
 
@@ -34,7 +33,7 @@ Since we did not detect any mycoplasma contamination we did not remove any sampl
 The full reproducible workflow up to this point is available at https://github.com/alfredorago/organoids-probio.
 Note: the repository is private so please ask to be added as a collaborator if you want to inspect the workflow in detail.
 
-The number of total annotated genes after Salmon quantification and matching with the human genome data via tximeta are `r nrow(assay(experiment_data))`. 
+The number of total annotated genes after Salmon quantification and matching with the human genome data (GENCODE v32) via tximeta are `r nrow(assay(experiment_data))`. 
 
 ## PCA
 
@@ -90,7 +89,7 @@ PC 2 looks like it is separating the two pseudo-groups of patients in 2D organoi
 This signal is quite strong (20% of the total variance), but I have no idea where it is coming from. I have already ruled out effects from sex and batch/lab. 
 We likely need to investgate this difference if we want to use these data.
 
-```{r correlation_scatterplot, echo=FALSE, fig.height=8, fig.width=10, message=FALSE}
+```{r correlation_scatterplot, echo=FALSE, fig.height=8, fig.width=10, message=FALSE, warning=FALSE}
 pca_data_frame <- colData(x = experiment_data) %>% 
   as_tibble() %>% 
   bind_cols(., as_tibble(pca_data$x))
@@ -106,7 +105,7 @@ I do this by checking the distance between LGG and control for the same individu
 No PC shows a consistent association with LGG treatment.
 This suggests that if there is an effect, it might be caused by very few genes.
 
-```{r deltas, message=FALSE, warning=FALSE}
+```{r deltas, echo=FALSE, message=FALSE, warning=FALSE}
 pca_deltas <- pca_data_frame %>% 
   filter(treatment != '3D') %>% 
   extract(,1:19) %>% 
@@ -133,7 +132,7 @@ The second biggest split is between 3D and 2D samples, but the biggest outliers 
 Within 3D and 2D samples, there is also a strong genotype effect: samples from the same patient cluster together regardless of treatment with LGG.
 LGG treatment has a low to no effect, and we will likely need to control for genotype and 2D/3D effects before we are able to detect anything.
 
-```{r hclust, echo=FALSE, fig.width=12}
+```{r hclust, echo=FALSE, fig.width=12, message=FALSE, warning=FALSE}
 expr_hclust <- 
   assay(vsd) %>% 
   set_colnames(value = paste(vsd$treatment, vsd$patient_id, sep = "_")) %>% 
@@ -157,7 +156,7 @@ plot(
 ```
 
 
-```{r pheatmap, fig.height=10, fig.width=12, message=FALSE, warning=FALSE}
+```{r pheatmap, echo=FALSE, fig.height=10, fig.width=12, message=FALSE, warning=FALSE}
 variance_rank <- function(x, minMedian, proportion){
   # Return the top proportion of rows ranked by variance
   row_median = apply(x, MARGIN = 1, stats::median)
