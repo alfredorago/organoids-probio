@@ -20,9 +20,7 @@ rule all:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html",
-    expression_report = "results/reports/expression_report.html",
-    quant = [expand("results/salmon/salmon_quant/{id}", id = id) for id in sample_id],
-    tximeta = 'results/tximeta/gene_data.Rdata'
+    expression_report = "results/reports/expression_report.html"
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
