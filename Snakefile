@@ -20,7 +20,9 @@ rule all:
     fastq_files = expand("{path}{base}.fq.gz", base = input_base_fq, path = input_path_fq),
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html",
-    expression_report = "results/reports/expression_report.html"
+    expression_report = "results/reports/expression_report.html",
+    DESeq_controls = "results/deseq/DE_2D_vs_3D.Rdata",
+    DESeq_probiotics = "results/deseq/DE_2D_vs_LGG.Rdata"
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -227,10 +229,10 @@ rule tximeta:
   script:
     'scripts/tximeta.R'
 
-# Create knitr expression report from main experiment (includes PCA, heatmap etc)
+# Create knitr expression report from main experiment (includes PCA, heatmap and other QC/exploration steps)
 rule expression_report:
   input:
-    gene_data = 'results/tximeta/gene_data.Rdata',
+    gene_data = "results/tximeta/gene_data.Rdata",
     script = "scripts/expression_report.Rmd"
   output:
     "results/reports/expression_report.html"
@@ -239,3 +241,14 @@ rule expression_report:
     Rscript -e "rmarkdown::render('{input.script}')"
     mv scripts/expression_report.html {output}
     '''
+
+# Analyze samples via DESeq2
+rule deseq:
+  input:
+    "results/tximeta/gene_data.Rdata"
+  output:
+    controls = "results/deseq/DE_2D_vs_3D.Rdata",
+    probiotics = "results/deseq/DE_2D_vs_LGG.Rdata"
+  threads: 5
+  script:
+    'scripts/deseq.R'
