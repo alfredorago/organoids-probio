@@ -43,7 +43,7 @@ rule fastqc:
     "logs/fastqc"
   threads: 6
   shell:
-    "nice --adjustment=+10 fastqc {input.fq} -threads {threads} -o=results/fastqc/ 2> {log}"
+    "nice -n 10 fastqc {input.fq} -threads {threads} -o=results/fastqc/ 2> {log}"
 
 # Trim 20 bp from 5' end to remove primer adapter bias
 rule trim_reads:
@@ -95,7 +95,7 @@ rule fastq_screen:
   threads: 16
   shell:
     '''
-    nice --adjustment=+10 \
+    nice -n 10 \
     fastq_screen \
         --subset 0 --outdir results/fastq_screen --conf scripts/fastq_screen.conf --threads {threads} {input.fastq}
     '''
