@@ -8,8 +8,6 @@
     './packrat/lib-R/x86_64-pc-linux-gnu/3.6.1')
 )
 
-
-library(here)
 library(magrittr)
 library(stringr)
 library(dplyr)
@@ -24,7 +22,7 @@ register(MulticoreParam(snakemake@threads))
 set.seed(42)
 
 ## Import read counts and metadata
-culture_type_dataset <- readRDS(file = here("results/deseq/DE_2D_vs_3D.Rdata"))
+culture_type_dataset <- readRDS(file = snakemake@input[[1]])
 culture_type_results <- results(culture_type_dataset)
 metadata <- colData(culture_type_dataset)
 
@@ -83,14 +81,15 @@ GO_results <- GO_analyse(
   f = "treatment",
   GO_genes = GO_table,
   all_GO = GO_ontologies,
-  method = "rf"
+  method = "rf",
+  ntree = snakemake@params[["ntree"]]
 )
 
 ## Filter low-count GOs, calculate p-values and correct them via fdr
 GO_pvalues =
   GO_results %>%
-  subset_scores(total = 5) %>%
-  pValue_GO(N = 5)
+  subset_scores(total = snakemake@params[["min_genes_per_GO"]]) %>%
+  pValue_GO(N = snakemake@params[["p_value_permutations"]] )
 
 GO_qvalues =
   GO_pvalues %$%
@@ -100,4 +99,4 @@ GO_qvalues =
   ) %>%
   dplyr::select(go_id, namespace_1003, total_count, data_count, q.val, p.val, ave_rank, ave_score, name_1006)
 
-write.csv(x = GO_qvalues, file = here("results/GO_enrichment/GO_results.csv"))
+write.csv(x = GO_qvalues, file = snakemake@output[[1]])

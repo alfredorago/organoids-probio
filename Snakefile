@@ -11,6 +11,9 @@ bowtie_suffixes = (
   *[".rev.{id}.bt2".format(id = i) for i in range(1,3)]
 )
 
+# Define contrast suffix for input/output files
+contrasts = ("2D_vs_3D","2D_vs_LGG")
+
 # rule all to generate all output files at once
 rule all:
   params:
@@ -21,8 +24,8 @@ rule all:
     fastqc_reports = expand("results/fastqc/{base}_fastqc.html", base = input_base_fq),
     mycoplasma_report = "results/reports/mycoplasma_report.html",
     expression_report = "results/reports/expression_report.html",
-    DESeq_controls = "results/deseq/DE_2D_vs_3D.Rdata",
-    DESeq_probiotics = "results/deseq/DE_2D_vs_LGG.Rdata"
+    DESeq = expand("results/deseq/DE_{contrasts}.Rdata", contrasts = contrasts),
+    GOexpress = expand("results/GOexpress/GO_enrichment_{contrasts}.csv", contrasts = contrasts)
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -252,3 +255,17 @@ rule deseq:
   threads: 5
   script:
     'scripts/deseq.R'
+
+# Calculate GO enrichment via GOexpress
+rule GOexpress:
+  input:
+    "results/deseq/DE_{contrast}.Rdata"
+  output:
+    "results/GOexpress/GO_enrichment_{contrast}.csv"
+  params:
+    ntree = 1E4,
+    min_genes_per_GO = 10,
+    p_value_permutations = 1E3
+  threads: 1
+  script:
+    "scripts/GO_enrichment.R"
