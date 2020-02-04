@@ -14,6 +14,7 @@ library(here)
 library(magrittr)
 library(stringr)
 library(GO.db)
+library(fdrtool)
 ```
 
 # Import read counts
@@ -99,9 +100,22 @@ GO_results <- GO_analyse(
   all_GO = GO_ontologies,
   method = "rf"
 )
+
+# Bootstrap tree results (1 sec each)
+GO_pvalues = 
+  GO_results %>% 
+  subset_scores(total = 5) %>% 
+  pValue_GO(N = 5)
+
+GO_qvalues = 
+  GO_pvalues %$% 
+  GO %>% 
+  dplyr::mutate(
+    q.val = fdrtool(p.val)$qval
+  ) %>% 
+  dplyr::select(go_id, namespace_1003, total_count, data_count, q.val, p.val, ave_rank, ave_score, name_1006)
+
+write.csv(x = GO_qvalues, file = here("results/GO_enrichment/GO_results.csv"))
 ```
 
-# Bootstrap tree results
-
-# Correct p-values
 
