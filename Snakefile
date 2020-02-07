@@ -25,7 +25,7 @@ rule all:
     mycoplasma_report = "results/reports/mycoplasma_report.html",
     expression_report = "results/reports/expression_report.html",
     DESeq = expand("results/deseq/DE_{contrasts}.Rdata", contrasts = contrasts),
-    GOexpress = expand("results/GOexpress/GO_enrichment_{contrasts}.csv", contrasts = contrasts)
+    GO_results = expand("results/GOexpress/GO_results_{contrasts}.Rdata", contrasts = contrasts)
 
 # Download reference mycoplasma genome
 rule download_mycoplasma:
@@ -261,7 +261,9 @@ rule GOexpress:
   input:
     "results/deseq/DE_{contrast}.Rdata"
   output:
-    "results/GOexpress/GO_enrichment_{contrast}.csv"
+    expression_set = "results/GOexpress/expression_set_{contrast}.Rdata",
+    GO_results = "results/GOexpress/GO_results_{contrast}.Rdata",
+    q_value_table = "results/GOexpress/GO_qvalues_{contrast}.csv"
   params:
     ntree = 1E4,
     min_genes_per_GO = 10,

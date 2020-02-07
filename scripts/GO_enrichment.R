@@ -75,6 +75,8 @@ GO_ontologies = select(
     namespace = factor(x = namespace, levels = c("CC", "BP", "MF"), labels = c("cellular_component", "biological_process", "molecular_function"))
   )
 
+saveRDS(object = expression_set, file = snakemake@output[["expression_set"]])
+
 ## Run random forest algorithm
 GO_results <- GO_analyse(
   eSet = expression_set,
@@ -85,18 +87,20 @@ GO_results <- GO_analyse(
   ntree = snakemake@params[["ntree"]]
 )
 
-## Filter low-count GOs, calculate p-values and correct them via fdr
+## Filter low-count GOs, calculate p-values and save as RDS file for visualization
 GO_pvalues =
   GO_results %>%
   subset_scores(total = snakemake@params[["min_genes_per_GO"]]) %>%
   pValue_GO(N = snakemake@params[["p_value_permutations"]] )
 
+saveRDS(object = GO_pvalues, file = snakemake@output[["GO_results"]])
+
+## Correct via fdr and save table of results
 GO_qvalues =
   GO_pvalues %$%
   GO %>%
   mutate(
     q.val = fdrtool(p.val)$qval
-  ) %>%
-  dplyr::select(go_id, namespace_1003, total_count, data_count, q.val, p.val, ave_rank, ave_score, name_1006)
+  )
 
-write.csv(x = GO_qvalues, file = snakemake@output[[1]])
+write.csv(x = GO_qvalues, file = snakemake@output[["q_value_table"]])
