@@ -100,7 +100,7 @@ GO_qvalues =
   GO_pvalues %$%
   GO %>%
   mutate(
-    q.val = fdrtool(p.val)$qval
+    q.val = fdrtool(p.val, statistic = "pvalue", plot = FALSE)$qval
   )
 
 write.csv(x = GO_qvalues, file = snakemake@output[["q_value_table"]])
