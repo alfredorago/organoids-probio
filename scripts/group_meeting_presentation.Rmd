@@ -1,0 +1,277 @@
+---
+title: "Gut Organoids flat and round"
+author: "Alfredo Rago"
+date: "25/02/2020"
+output:
+  ioslides_presentation: default
+  slidy_presentation: default
+subtitle: And a few bacteria too
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE,  message=FALSE, warning=FALSE)
+library(png)
+library(jpeg)
+library(knitr)
+library(kableExtra)
+library(here)
+library(grid)
+
+library(magrittr)
+library(tidyverse)
+library(ggplot2)
+
+library(DESeq2)
+library(GOexpress)
+```
+
+## My introduction to gastroenterology
+
+```{r intro, out.height = "100%"}
+include_graphics(path = "https://imgs.xkcd.com/comics/gastroenterology.png")
+```
+
+## The Culprits
+
+* Yun Chen
+* Kim Jensen
+* Albin Sandelin 
+* Jette Borndholt Lange
+
+* ![logo](https://www.chr-hansen.com/Resources/images/logo.svg)
+
+## Clinical trial study design
+
+```{r clinical_trial_design, out.height = "100%"}
+include_graphics(path = here("clinical_trial/images/image8.png"))
+```
+
+## The bacteria make it to the gut
+
+```{r bacteria_DNAseq, out.height = "80%"}
+include_graphics(path = here("clinical_trial/images/image2.png"))
+```
+
+## Only some subjects respond to treatment
+
+```{r responders, out.height = "150%"}
+readPNG(source = here("clinical_trial/images/image7.png")) %>% 
+  grid.raster(.)
+```
+
+## Responders activate B-cell pathways
+
+```{r B_cell_activation, out.height = "140%"}
+readPNG(source = here("clinical_trial/images/image5.png")) %>% 
+  grid.raster(.)
+```
+
+## Working with people is hard
+
+```{r people", out.width = "100%"}
+include_graphics(path = "https://imgs.xkcd.com/comics/gut_fauna_2x.png")
+```
+
+## Working with 3D organoids is also hard!
+
+```{r 3D_organoids, out.height = "100%"}
+readJPEG(source = here("clinical_trial/downloaded_figures/F1.large.jpg")) %>%
+  grid.raster(.)
+```
+
+## Can we use 2D organoids instead?
+
+Aims of the study:
+
+* Characterize 2D organoids
+* Compare 2D organoids with 3D organoids and other gut models
+* Compare the response of 2D organoids to clinical trial results
+* (and more)
+
+## Preliminary data at a glance
+
+```{r PCA}
+experiment_data <- readRDS(file = here("results/tximeta/gene_data.Rdata"))
+
+vsd <- DESeqDataSet(se = experiment_data, design = ~ patient_id + treatment) %>% 
+  vst(., blind = F)
+
+plotPCA(vsd, intgroup = c("treatment","patient_id", "batch"), returnData = T, ntop = 1000) %>% 
+  ggplot(., aes(x = PC1, y = PC2, col = patient_id)) +
+  geom_point() +
+  facet_wrap(. ~ treatment)
+```
+
+## Genes at a glance
+
+```{r pheatmap, echo=FALSE, out.height="120%", message=FALSE, warning=FALSE}
+variance_rank <- function(x, minMedian, proportion){
+  # Return the top proportion of rows ranked by variance
+  row_median = apply(x, MARGIN = 1, stats::median)
+  y = x[which(row_median >= minMedian),]
+  variance = apply(y, MARGIN = 1, stats::var)
+  y = x[base::order(variance, decreasing = T),]
+  y = y[1:floor(nrow(y)*proportion),]
+  y
+}
+
+assay(vsd) %>% 
+  set_colnames(value = paste(vsd$treatment, vsd$patient_id, sep = "_")) %>% 
+  variance_rank(proportion = 0.2, minMedian = 4) %>% 
+  scale(x = ., center = TRUE, scale = TRUE) %>% 
+  t() %>% 
+  pheatmap::pheatmap(
+    mat = .,
+    color = viridis::viridis(n=20),
+    cutree_rows = 4,
+    show_rownames = T,
+    show_colnames = F,
+    legend = F,
+    main = NA,
+    fontsize_row = 5
+  )
+```
+
+## Differences between 2D and 3D organoids
+
+```{r 3D_MA}
+d_data <- readRDS(file = here("results/deseq/DE_2D_vs_3D.Rdata"))
+d_res <- results(d_data, lfcThreshold = 0.5, alpha = 0.05)
+
+plotMA(d_res)
+```
+
+## 2D organoids deactivate most DNA-replication genes
+```{r, GO_3DD_heat}
+expression_set_3D = readRDS(file = here("results/GOexpress/expression_set_2D_vs_3D.Rdata"))
+GO_results_3D = readRDS(file = here("results/GOexpress/GO_results_2D_vs_3D.Rdata"))
+
+heatmap_GO(
+  go_id = "GO:0006260",
+  result = GO_results_3D,
+  eSet = expression_set_3D[, order(expression_set_3D$treatment)],
+  f = "treatment",
+  gene_names = FALSE,
+  expr.col = viridis::viridis(n = 75, option = "cividis"),
+  Rowv = FALSE, 
+  dendrogram = "column",
+  main = "DNA Replication \n GO:0006260",
+  trace = 'none',
+  scale = 'column',
+  key = T,
+  density.info = 'histogram',
+  key.xlab = 'log fold change',
+  key.ylab = NA
+)
+```
+
+## Do probiotics change the gene expression of 2D organoids?
+
+```{r LGG_MA}
+lgg_data <- readRDS(file = here("results/deseq/DE_2D_vs_LGG.Rdata"))
+lgg_res <- results(lgg_data, lfcThreshold = 0.5, alpha = 0.05)
+
+plotMA(lgg_res)
+```
+
+## What doe enriched GOs look like?
+
+```{r GO_LGG_plot}
+GO_results_LGG = readRDS(file = here("results/GOexpress/GO_results_2D_vs_LGG.Rdata"))
+expression_set_LGG = readRDS(file = here("results/GOexpress/expression_set_2D_vs_LGG.Rdata"))
+
+heatmap_GO(
+  go_id = "GO:0003170",
+  result = GO_results_LGG,
+  eSet = expression_set_LGG[, order(expression_set_LGG$treatment)],
+  f = "treatment",
+  gene_names = FALSE,
+  expr.col = viridis::viridis(n = 75, option = "cividis"),
+  Rowv = FALSE, 
+  dendrogram = "column",
+  main.Lsplit = 50,
+  main = "Heart Valve Development \n GO:0003170"
+)
+```
+
+## Do we see at least some genotypes responding?
+
+```{r PCA_fold_LGG}
+
+sum_replicates_counts <-
+  DESeqDataSet(se = experiment_data, design = ~ patient_id + treatment) %>%
+  collapseReplicates(., paste0(.$patient_id, "_", .$treatment))
+
+LGG_fold_change <-
+  sum_replicates_counts[,sum_replicates_counts$treatment != "3D"] %>% 
+  vst(object = ., blind = T) %>% 
+  assay(.) %>% 
+  as.data.frame(., row.names = rownames(.)) %>%
+  rownames_to_column(var = "gene_id") %>% 
+  pivot_longer(
+    cols = -gene_id, 
+    names_to = c("patient_id", "treatment"), 
+    names_pattern =  "([0-9]*)_(.*)", 
+    values_to = "counts") %>% 
+  pivot_wider(
+    names_from = treatment,
+    values_from = counts) %>% 
+  mutate(
+    fold_change = log2(LGG/Control)
+  )
+
+
+LGG_fold_change_matrix <-
+  LGG_fold_change %>% 
+  select(gene_id, patient_id, fold_change) %>% 
+  pivot_wider(names_from = patient_id, values_from = fold_change) %>% 
+  column_to_rownames(var = "gene_id") %>% 
+  as.matrix()
+
+  
+LGG_PCA_results <- 
+  LGG_fold_change_matrix[
+    apply(LGG_fold_change_matrix, 1, function(x){
+      var(x) > 1E-4}),
+    ] %>% 
+  t() %>% 
+  prcomp(x = ., center = T, scale. = T)
+
+LGG_PCA_projected_data <-
+  LGG_PCA_results %$%
+  x %>% 
+  as.data.frame() %>% 
+  rownames_to_column("sample_id") %>% 
+  set_colnames(
+    c( "id",
+       paste0(names(summary(LGG_PCA_results)[[6]][2,]),
+              " (",
+              summary(LGG_PCA_results)[[6]][2,] %>% multiply_by(100) %>% round(., 3),
+              "%)")
+    )
+  )
+
+GGally::ggpairs(data = LGG_PCA_projected_data, 
+                columns = 2:5, 
+                labeller = "label_value",
+                progress = FALSE) 
+```
+
+## The story so far
+
+* 2D organoids are vastly different from 3D ones
+* 2D organoids retain differences between genotypes
+* 2D organoids show large increase in variance between replicates compared to 3D ones
+* Probiotic treatment has negligible differences on the aggregated samples
+
+## Remaining questions
+
+* Do responders produce responsive cell lines?
+* Do the responses (if any) match those of in-vivo work?
+
+## What's next?
+
+* Bigger dataset!
+* More replicates!
+* More bacterial strains! 
+* Comparison with CACO cell lines!
